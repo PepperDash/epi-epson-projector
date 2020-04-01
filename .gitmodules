@@ -1,0 +1,3 @@
+[submodule "submodule/essentials-builds"]
+	path = submodule/essentials-builds
+	url = https://github.com/PepperDash/Essentials-Builds.git
