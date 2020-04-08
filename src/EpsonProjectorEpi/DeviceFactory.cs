@@ -29,7 +29,7 @@ namespace EpsonProjectorEpi
             var props = PropsConfig.FromDeviceConfig(config);
             var coms = CommFactory.CreateCommForDevice(config);
             var status = new StatusManager(config.Key + "-Status", coms);
-            var poll = new PollManager(coms);
+            var poll = new PollManager(coms, status);
 
             var proj = new EpsonProjector(config.Key, config.Name, coms, poll, status);
 

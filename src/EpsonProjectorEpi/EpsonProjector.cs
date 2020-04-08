@@ -46,6 +46,7 @@ namespace EpsonProjectorEpi
             AddPostActivationAction(StartPolls);
             AddPostActivationAction(StartCommunicationMonitor);
             AddPostActivationAction(HandleStatusUpdated);
+            AddPostActivationAction(UpdateAllFeedbacks);
         }
 
         public override bool CustomActivate()
