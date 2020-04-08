@@ -25,7 +25,10 @@ namespace EpsonProjectorEpi.Commands
 
             Debug.Console(2, _coms, "Attempting to send string {0}", _cmd.CmdString);
 
-            _coms.SendText(_cmd.CmdString + '\x0D');
+            var cmd = new StringBuilder(_cmd.CmdString);
+            cmd.Append('\x0D');
+
+            _coms.SendText(cmd.ToString());
             return true;
         }
     }

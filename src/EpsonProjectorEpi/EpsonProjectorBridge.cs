@@ -47,7 +47,7 @@ namespace EpsonProjectorEpi
             proj.PowerIsOnFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOn]);
             proj.PowerIsOnFeedback.LinkComplementInputSig(trilist.BooleanInput[joinMap.PowerOff]);
             proj.IsWarmingUpFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Warming]);
-            proj.IsCoolingDownFeedback.LinkComplementInputSig(trilist.BooleanInput[joinMap.Cooling]);
+            proj.IsCoolingDownFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Cooling]);
             proj.MuteIsOnFb.LinkInputSig(trilist.BooleanInput[joinMap.MuteOn]);
             proj.MuteIsOnFb.LinkComplementInputSig(trilist.BooleanInput[joinMap.MuteOff]);
             proj.CommunicationMonitor.IsOnlineFeedback.LinkInputSig(trilist.BooleanInput[joinMap.IsOnline]);
