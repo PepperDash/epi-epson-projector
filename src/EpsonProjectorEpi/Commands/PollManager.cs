@@ -42,19 +42,24 @@ namespace EpsonProjectorEpi.Commands
 
         public void Dispose()
         {
-            if (!Disposed)
-                Disposed = true;
+            Dispose(true);
+            CrestronEnvironment.GC.SuppressFinalize(this);
+        }
 
-            Dispose(Disposed);
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
+                _timer.Dispose();
+
+            Disposed = true;
+        }
+
+        ~PollManager()
+        {
+            Dispose(false);
         }
 
         #endregion
-
-        private void Dispose(bool dispose)
-        {
-            _timer.Dispose();
-            CrestronEnvironment.GC.SuppressFinalize(this);
-        }
 
         public void Start()
         {
