@@ -37,7 +37,7 @@ namespace EpsonProjectorEpi
                 props.Monitor = new CommunicationMonitorConfig();
 
             proj.CommunicationMonitor = new GenericCommunicationMonitor(proj, coms, props.Monitor);
-            proj.ScreenName = props.ScreenName;
+            proj.ScreenName = props.ScreenName ?? String.Empty;
 
             return proj;
         }
