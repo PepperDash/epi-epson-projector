@@ -33,6 +33,9 @@ namespace EpsonProjectorEpi
 
             var proj = new EpsonProjector(config.Key, config.Name, coms, poll, status);
 
+            if (props.Monitor == null) 
+                props.Monitor = new CommunicationMonitorConfig();
+
             proj.CommunicationMonitor = new GenericCommunicationMonitor(proj, coms, props.Monitor);
             proj.ScreenName = props.ScreenName;
 
