@@ -18,6 +18,8 @@ namespace EpsonProjectorEpi.Enums
         static ProjectorMute()
         {
             SearchString = "MUTE";
+            Default = MuteOff;
+            Unknown = new ProjectorMute(99, "Mute Unknown", CustomCmd.Empty, String.Empty);
         }
 
         public static readonly ProjectorMute MuteOn = new ProjectorMute(1, "Mute On", new MuteOnCmd(), "MUTE=ON");

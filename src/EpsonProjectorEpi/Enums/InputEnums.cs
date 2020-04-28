@@ -19,6 +19,8 @@ namespace EpsonProjectorEpi.Enums
         static ProjectorInput()
         {
             SearchString = "SOURCE";
+            Default = Hdmi;
+            Unknown = new ProjectorInput(99, "Unknown", CustomCmd.Empty, String.Empty);
         }
 
         public static readonly ProjectorInput Hdmi = new ProjectorInput(1, "Hdmi", new SourceInputHdmiCmd(), "SOURCE=A0");

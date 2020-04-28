@@ -61,7 +61,6 @@ namespace EpsonProjectorEpi.Enums
             return base.GetHashCode();
         }
 
-
         public static TEnum FromName(string name, bool ignoreCase)
         {
             if (String.IsNullOrEmpty(name))

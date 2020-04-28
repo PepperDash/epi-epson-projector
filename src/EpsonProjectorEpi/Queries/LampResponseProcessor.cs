@@ -8,7 +8,7 @@ using EpsonProjectorEpi.Extensions;
 
 namespace EpsonProjectorEpi.Queries
 {
-    public class LampResponseProcessor : BaseResponseProcessor
+    public class LampResponseProcessor : BaseResponseProcessor<int>
     {
         readonly string _response;
 
@@ -18,7 +18,7 @@ namespace EpsonProjectorEpi.Queries
             _response = response;
         }
 
-        public int Handle()
+        public override int Handle()
         {
             if (!_response.Contains("LAMP"))
                 throw new ArgumentException("LAMP");

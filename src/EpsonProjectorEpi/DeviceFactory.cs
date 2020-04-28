@@ -10,6 +10,7 @@ using EpsonProjectorEpi.Extensions;
 using EpsonProjectorEpi.Commands;
 using EpsonProjectorEpi.Queries;
 using EpsonProjectorEpi.Config;
+using EpsonProjectorEpi.States;
 
 namespace EpsonProjectorEpi
 {
@@ -19,24 +20,8 @@ namespace EpsonProjectorEpi
         {
             PepperDash.Essentials.Core.DeviceFactory.AddFactoryForType("epsonprojector", config =>
                 {
-                    var builder = new DeviceFactory();
-                    return builder.BuildDevice(config).BuildInputs();
+                    return new EpsonProjector(config).BuildInputs();
                 });
-        }
-
-        public IKeyed BuildDevice(DeviceConfig config)
-        {
-            var props = PropsConfig.FromDeviceConfig(config);
-            var coms = CommFactory.CreateCommForDevice(config);
-            var status = new StatusManager(config.Key + "-Status", coms);
-            var poll = new PollManager(coms, status);
-
-            var proj = new EpsonProjector(config.Key, config.Name, coms, poll, status);
-
-            proj.CommunicationMonitor = new GenericCommunicationMonitor(proj, coms, props.Monitor);
-            proj.ScreenName = props.ScreenName;
-
-            return proj;
         }
     }
 }

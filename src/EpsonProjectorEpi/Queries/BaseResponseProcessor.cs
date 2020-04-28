@@ -7,7 +7,7 @@ using Crestron.SimplSharp;
 
 namespace EpsonProjectorEpi.Queries
 {
-    public class BaseResponseProcessor : IKeyed
+    public abstract class BaseResponseProcessor<T> : IKeyed
     {
         readonly string _key;
 
@@ -15,7 +15,7 @@ namespace EpsonProjectorEpi.Queries
 
         public string Key
         {
-            get { throw new NotImplementedException(); }
+            get { return _key; }
         }
 
         #endregion
@@ -24,5 +24,7 @@ namespace EpsonProjectorEpi.Queries
         {
             _key = key;
         }
+
+        public abstract T Handle();
     }
 }

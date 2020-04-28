@@ -4,23 +4,28 @@ using System.Linq;
 using System.Text;
 using Crestron.SimplSharp;
 using PepperDash.Core;
+using PepperDash.Essentials.Core;
 using EpsonProjectorEpi.Queries;
 using EpsonProjectorEpi.Enums;
-using PepperDash.Essentials.Core;
+using EpsonProjectorEpi.Commands;
+using EpsonProjectorEpi.States.Power;
 
-namespace EpsonProjectorEpi.Commands
+namespace EpsonProjectorEpi.Polling
 {
-    public class PollManager : IDisposable, IPollManager
+    public class PollManager : IPollManager
     {
+        private readonly Action<IEpsonCmd> _enqueueCmd;
         public bool Disposed { get; private set; }
 
         readonly CTimer _timer;
-        readonly IStatusManager _status;
+        readonly PowerState _power;
 
-        public PollManager(IBasicCommunication coms, IStatusManager status)
+        public PollManager(Action<IEpsonCmd> enqueueAction, PowerState power)
         {
-            _timer = new CTimer(TimerCallback, coms, Timeout.Infinite, 10000);
-            _status = status;
+            _timer = new CTimer(TimerCallback, this, Timeout.Infinite, 10000);
+            _power = power;
+            _enqueueCmd = enqueueAction;
+
             CrestronEnvironment.ProgramStatusEventHandler += eventType =>
                 {
                     switch (eventType)
@@ -34,8 +39,7 @@ namespace EpsonProjectorEpi.Commands
 
         void TimerCallback(object obj)
         {
-            var coms = obj as IBasicCommunication;
-            Poll(coms);
+            Poll();
         }
 
         #region IDisposable Members
@@ -49,7 +53,10 @@ namespace EpsonProjectorEpi.Commands
         private void Dispose(bool disposing)
         {
             if (disposing)
+            {
+                _timer.Stop();
                 _timer.Dispose();
+            }
 
             Disposed = true;
         }
@@ -66,26 +73,18 @@ namespace EpsonProjectorEpi.Commands
             _timer.Reset(0, 15000);
         }
 
-        void Poll(IBasicCommunication coms)
+        void Poll()
         {
             using (var wh = new CEvent())
             {
-                new CmdHandler(coms, new PowerPollCmd()).Handle();
-                wh.Wait(100);
+                _enqueueCmd(new PowerPollCmd());
 
-                if (_status.PowerStatus == ProjectorPower.PowerOff 
-                    || _status.PowerStatus == ProjectorPower.Standby 
-                    || _status.PowerStatus == ProjectorPower.AbnormalityStandby)
+                if (!_power.PowerIsOn)
                     return;
 
-                new CmdHandler(coms, new SourcePollCmd()).Handle();
-                wh.Wait(100);
-
-                new CmdHandler(coms, new LampPollCmd()).Handle();
-                wh.Wait(100);
-
-                new CmdHandler(coms, new MutePollCmd()).Handle();
-                wh.Wait(100);
+                _enqueueCmd(new SourcePollCmd());
+                _enqueueCmd(new LampPollCmd());
+                _enqueueCmd(new MutePollCmd());
             };
         }
     }

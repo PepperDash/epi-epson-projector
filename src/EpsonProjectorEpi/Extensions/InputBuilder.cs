@@ -18,20 +18,19 @@ namespace EpsonProjectorEpi.Extensions
             var display = device as IRoutingInputs;
             if (display == null) return device;
 
-            ProjectorInput
-                .GetAll()
-                .OrderBy(x => x.Value)
-                .ToList()
-                .ForEach(input =>
-                    {
-                        display.InputPorts.Add(
-                            new RoutingInputPort(
-                            display.Key + "-" + input.Name,
-                            eRoutingSignalType.Video,
-                            eRoutingPortConnectionType.BackplaneOnly,
-                            input.Cmd,
-                            display));
-                    });
+            foreach (var input in ProjectorInput.GetAll().OrderBy(x => x.Value))
+            {
+                if (input == ProjectorInput.Unknown)
+                    continue;
+
+                display.InputPorts.Add(
+                    new RoutingInputPort(
+                        display.Key + "-" + input.Name,
+                        eRoutingSignalType.Video,
+                        eRoutingPortConnectionType.BackplaneOnly,
+                        input,
+                        display));
+            }
             
             return display;
         }

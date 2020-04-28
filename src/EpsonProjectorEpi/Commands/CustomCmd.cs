@@ -23,5 +23,10 @@ namespace EpsonProjectorEpi.Commands
         }
 
         #endregion
+
+        public static CustomCmd Empty
+        {
+            get { return new CustomCmd(String.Empty); }
+        }
     }
 }

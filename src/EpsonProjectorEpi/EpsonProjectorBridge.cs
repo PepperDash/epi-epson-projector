@@ -36,6 +36,8 @@ namespace EpsonProjectorEpi
 
             foreach (var input in ProjectorInput.GetAll())
             {
+                if (input == ProjectorInput.Default) continue;
+
                 var joinActual = input.Value + joinMap.InputSelectOffset;
                 trilist.SetSigTrueAction((uint)joinActual, () => proj.ExecuteSwitch(input));
 
