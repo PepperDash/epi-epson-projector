@@ -112,11 +112,9 @@
     <Compile Include="Queries\SerialNumberResponseProcessor.cs" />
     <Compile Include="States\Input\InputStates.cs" />
     <Compile Include="States\IStateHasPoll.cs" />
-    <Compile Include="States\Lamp Hours\LampHoursState.cs" />
     <Compile Include="States\Mute\MuteOffState.cs" />
     <Compile Include="States\Mute\MuteOnState.cs" />
     <Compile Include="States\Mute\MuteState.cs" />
-    <Compile Include="States\SerialNumber\SerialNumberState.cs" />
     <Compile Include="States\StateManager\CmdStateManager.cs" />
     <Compile Include="States\IStateManager.cs" />
     <Compile Include="Queries\LampResponseProcessor.cs" />

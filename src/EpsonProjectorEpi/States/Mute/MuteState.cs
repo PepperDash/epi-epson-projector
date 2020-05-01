@@ -22,8 +22,8 @@ namespace EpsonProjectorEpi.States.Mute
 
         public abstract bool MuteIsOn { get; }
 
-        protected MuteState(EpsonProjector proj, IStateManager<ProjectorMute> stateManager)
-            : base(proj, stateManager)
+        protected MuteState(EpsonProjector proj)
+            : base(proj)
         {
             var builder = new StringBuilder(proj.Key);
             builder.Append("-MuteState");
@@ -50,7 +50,6 @@ namespace EpsonProjectorEpi.States.Mute
         {
             Debug.Console(2, this, "Updating Mute State to: {0}", state.Name);
             Proj.Mute = GetMuteStateForProjector(this, state);
-            Dispose();
         }
 
         public void Poll()
@@ -58,7 +57,7 @@ namespace EpsonProjectorEpi.States.Mute
             Proj.EnqueueCmd(new PowerPollCmd());
         }
 
-        protected static MuteState GetMuteStateForProjector(MuteState state, ProjectorMute mute)
+        public static MuteState GetMuteStateForProjector(MuteState state, ProjectorMute mute)
         {
             if (mute == ProjectorMute.MuteOn)
             {

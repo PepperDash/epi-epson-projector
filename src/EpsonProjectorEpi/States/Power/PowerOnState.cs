@@ -13,13 +13,13 @@ namespace EpsonProjectorEpi.States.Power
     public class PowerOnState : PowerState
     {
         public PowerOnState(PowerState state)
-            : this(state.Proj, state.StateManager)
+            : this(state.Proj)
         {
 
         }
 
-        public PowerOnState(EpsonProjector proj, IStateManager<ProjectorPower> stateManager)
-            : base(proj, stateManager)
+        public PowerOnState(EpsonProjector proj)
+            : base(proj)
         {
             _currentState = ProjectorPower.PowerOn;
         }

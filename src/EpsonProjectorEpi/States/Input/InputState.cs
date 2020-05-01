@@ -109,8 +109,8 @@ namespace EpsonProjectorEpi.States.Input
             UpdateState(input);
         }
 
-        protected InputState(EpsonProjector proj, IStateManager<ProjectorInput> stateManager)
-            : base(proj, stateManager)
+        protected InputState(EpsonProjector proj)
+            : base(proj)
         {
             var builder = new StringBuilder(proj.Key);
             builder.Append("-InputState");
@@ -136,11 +136,9 @@ namespace EpsonProjectorEpi.States.Input
 
             if (_requestedInput != null && _requestedInput != state)
                 SendInputCmd(_requestedInput);
-
-            Dispose();
         }
 
-        protected static InputState GetStateForProjectorInput(InputState state, ProjectorInput input)
+        public static InputState GetStateForProjectorInput(InputState state, ProjectorInput input)
         {
             if (input == ProjectorInput.Hdmi)
                 return new InputStateHdmi(state);

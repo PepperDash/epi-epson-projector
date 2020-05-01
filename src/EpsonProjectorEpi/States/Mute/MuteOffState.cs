@@ -10,13 +10,13 @@ namespace EpsonProjectorEpi.States.Mute
     public class MuteOffState : MuteState
     {
         public MuteOffState(MuteState state)
-            : this(state.Proj, state.StateManager)
+            : this(state.Proj)
         {
 
         }
 
-        public MuteOffState(EpsonProjector proj, IStateManager<ProjectorMute> stateManager)
-            : base(proj, stateManager)
+        public MuteOffState(EpsonProjector proj)
+            : base(proj)
         {
             _currentState = ProjectorMute.MuteOff;
         }

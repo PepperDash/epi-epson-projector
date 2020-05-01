@@ -24,8 +24,8 @@ namespace EpsonProjectorEpi.States.Power
         public abstract bool ProjectorIsWarming { get; }
         public abstract bool ProjectorIsCooling { get; }
 
-        protected PowerState(EpsonProjector proj, IStateManager<ProjectorPower> stateManager)
-            : base(proj, stateManager)
+        protected PowerState(EpsonProjector proj)
+            : base(proj)
         {
             var builder = new StringBuilder(proj.Key);
             builder.Append("-PowerState");
@@ -46,10 +46,9 @@ namespace EpsonProjectorEpi.States.Power
         {
             Debug.Console(2, this, "Updating projector power to: {0}", state.Name);
             Proj.Power = GetPowerStateForProjectorPower(this, state);
-            Dispose();
         }
 
-        protected static PowerState GetPowerStateForProjectorPower(PowerState state, ProjectorPower power)
+        public static PowerState GetPowerStateForProjectorPower(PowerState state, ProjectorPower power)
         {
             if (power == ProjectorPower.PowerOn)
                 return new PowerOnState(state);

@@ -13,13 +13,13 @@ namespace EpsonProjectorEpi.States.Power
     public class PowerWarmingState : PowerState
     {
         public PowerWarmingState(PowerState state)
-            : this(state.Proj, state.StateManager)
+            : this(state.Proj)
         {
 
         }
 
-        public PowerWarmingState(EpsonProjector proj, IStateManager<ProjectorPower> stateManager)
-            : base(proj, stateManager)
+        public PowerWarmingState(EpsonProjector proj)
+            : base(proj)
         {
             _currentState = ProjectorPower.Warming;
         }

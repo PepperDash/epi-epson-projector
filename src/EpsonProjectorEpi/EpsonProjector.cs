@@ -18,8 +18,6 @@ using EpsonProjectorEpi.States;
 using EpsonProjectorEpi.States.Power;
 using EpsonProjectorEpi.States.Input;
 using EpsonProjectorEpi.States.Mute;
-using EpsonProjectorEpi.States.SerialNumber;
-using EpsonProjectorEpi.States.LampHours;
 
 namespace EpsonProjectorEpi
 {
@@ -28,6 +26,12 @@ namespace EpsonProjectorEpi
         private IBasicCommunication _coms;
         private IPollManager _poll;
         private CmdProcessor _commandProcessor;
+
+        private IStateManager<ProjectorPower> _powerStateManager;
+        private IStateManager<ProjectorInput> _inputStateManger;
+        private IStateManager<ProjectorMute> _muteStateManager;
+        private IStateManager<string> _serialNumberStateManager;
+        private IStateManager<int> _lampHoursStateManager;
 
         private PowerState _power;
         public PowerState Power
@@ -72,26 +76,14 @@ namespace EpsonProjectorEpi
             }
         }
 
-        private SerialNumberState _serialNumber;
-        public SerialNumberState SerialNumber
+        public string SerialNumber
         {
-            get { return _serialNumber; }
-            set
-            {
-                _serialNumber = value;
-                SerialNumberFb.FireUpdate();
-            }
+            get { return _serialNumberStateManager.State; }
         }
 
-        private LampHoursState _lampHours;
-        public LampHoursState LampHours
+        public int LampHours
         {
-            get { return _lampHours; }
-            set
-            {
-                _lampHours = value;
-                LampHoursFb.FireUpdate();
-            }
+            get { return _lampHoursStateManager.State; }
         }
 
         public StatusMonitorBase CommunicationMonitor { get; private set; }
@@ -122,17 +114,55 @@ namespace EpsonProjectorEpi
 
         void BuildStates()
         {
-            Power = new PowerOffState(this, new CmdStateManager<ProjectorPower>(Key + "PowerStateManager", _coms));
-            Input = new InputStateHdmi(this, new CmdStateManager<ProjectorInput>(Key + "InputStateManager", _coms));
-            Mute = new MuteOffState(this, new CmdStateManager<ProjectorMute>(Key + "MuteStateManager", _coms));
-            SerialNumber = new SerialNumberState(this, new SerialNumberStateManager(Key + "SerialNumberManager", _coms));
-            LampHours = new LampHoursState(this, new LampHoursStateManager(Key + "LampHoursStateManager", _coms));
+            _powerStateManager = new CmdStateManager<ProjectorPower>(Key + "PowerStateManager", _coms);
+            Power = new PowerOffState(this);
+
+            Input = new InputStateHdmi(this);
+            _inputStateManger = new CmdStateManager<ProjectorInput>(Key + "InputStateManager", _coms);
+
+            Mute = new MuteOffState(this);
+            _muteStateManager = new CmdStateManager<ProjectorMute>(Key + "MuteStateManager", _coms);
+
+            _serialNumberStateManager = new SerialNumberStateManager(Key + "SerialNumberManager", _coms);
+            _lampHoursStateManager = new LampHoursStateManager(Key + "LampHoursStateManager", _coms);
+
+            SubscribeToStateManagers();
+        }
+
+        void SubscribeToStateManagers()
+        {
+            _powerStateManager.StateUpdated += (sender, args) =>
+                {
+                    if (_powerStateManager.State == Power.Current)
+                        return;
+
+                    Power = PowerState.GetPowerStateForProjectorPower(Power, _powerStateManager.State);
+                };
+
+            _inputStateManger.StateUpdated += (sender, args) =>
+                {
+                    if (_inputStateManger.State == Input.Current)
+                        return;
+
+                    Input = InputState.GetStateForProjectorInput(Input, _inputStateManger.State);
+                };
+
+            _muteStateManager.StateUpdated += (sender, args) =>
+                {
+                    if (_muteStateManager.State == Mute.Current)
+                        return;
+
+                    Mute = MuteState.GetMuteStateForProjector(Mute, _muteStateManager.State);
+                };
+
+            _serialNumberStateManager.StateUpdated += (sender, args) => SerialNumberFb.FireUpdate();
+            _lampHoursStateManager.StateUpdated += (sender, args) => LampHoursFb.FireUpdate();
         }
 
         void BuildFeedbacks()
         {
-            SerialNumberFb = new StringFeedback(() => _serialNumber.Current);
-            LampHoursFb = new IntFeedback(() => _lampHours.Current);
+            SerialNumberFb = new StringFeedback(() => SerialNumber);
+            LampHoursFb = new IntFeedback(() => LampHours);
             MuteIsOnFb = new BoolFeedback(() => _mute.MuteIsOn);
             StatusFb = new StringFeedback(() => CommunicationMonitor.Status.ToString());
             CurrentInputValueFb = new IntFeedback(() => _input.InputNumber);

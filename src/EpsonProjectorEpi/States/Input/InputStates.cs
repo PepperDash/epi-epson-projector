@@ -13,13 +13,13 @@ namespace EpsonProjectorEpi.States.Input
     public class InputStateHdmi : InputState
     {
         public InputStateHdmi(InputState state)
-            : this(state.Proj, state.StateManager)
+            : this(state.Proj)
         {
 
         }
 
-        public InputStateHdmi(EpsonProjector proj, IStateManager<ProjectorInput> stateManager)
-            : base(proj, stateManager)
+        public InputStateHdmi(EpsonProjector proj)
+            : base(proj)
         {
             _currentState = ProjectorInput.Hdmi;
         }
@@ -28,13 +28,13 @@ namespace EpsonProjectorEpi.States.Input
     public class InputStateDvi : InputState
     {
         public InputStateDvi(InputState state)
-            : this(state.Proj, state.StateManager)
+            : this(state.Proj)
         {
 
         }
 
-        public InputStateDvi(EpsonProjector proj, IStateManager<ProjectorInput> stateManager)
-            : base(proj, stateManager)
+        public InputStateDvi(EpsonProjector proj)
+            : base(proj)
         {
             _currentState = ProjectorInput.Dvi;
         }
@@ -43,13 +43,13 @@ namespace EpsonProjectorEpi.States.Input
     public class InputStateVideo : InputState
     {
         public InputStateVideo(InputState state)
-            : this(state.Proj, state.StateManager)
+            : this(state.Proj)
         {
 
         }
 
-        public InputStateVideo(EpsonProjector proj, IStateManager<ProjectorInput> stateManager)
-            : base(proj, stateManager)
+        public InputStateVideo(EpsonProjector proj)
+            : base(proj)
         {
             _currentState = ProjectorInput.Video;
         }
@@ -58,13 +58,13 @@ namespace EpsonProjectorEpi.States.Input
     public class InputStateComputer : InputState
     {
         public InputStateComputer(InputState state)
-            : this(state.Proj, state.StateManager)
+            : this(state.Proj)
         {
 
         }
 
-        public InputStateComputer(EpsonProjector proj, IStateManager<ProjectorInput> stateManager)
-            : base(proj, stateManager)
+        public InputStateComputer(EpsonProjector proj)
+            : base(proj)
         {
             _currentState = ProjectorInput.Computer;
         }
