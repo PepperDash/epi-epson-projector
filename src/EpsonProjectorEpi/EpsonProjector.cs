@@ -39,6 +39,7 @@ namespace EpsonProjectorEpi
             get { return _power; }
             set
             {
+                Debug.Console(2, this, "Updating Power State : '{0}'", value.Current.Name);
                 _power = value;
              
                 PowerIsOnFeedback.FireUpdate();
@@ -59,7 +60,9 @@ namespace EpsonProjectorEpi
             get { return _input; }
             set
             {
+                Debug.Console(2, this, "Updating Input State : '{0}'", value.Current.Name);
                 _input = value;
+
                 CurrentInputValueFb.FireUpdate();
                 CurrentInputFeedback.FireUpdate();
             }
@@ -71,7 +74,9 @@ namespace EpsonProjectorEpi
             get { return _mute; }
             set
             {
+                Debug.Console(2, this, "Updating Mute State : '{0}'", value.Current.Name);
                 _mute = value;
+
                 MuteIsOnFb.FireUpdate();
             }
         }
@@ -107,26 +112,34 @@ namespace EpsonProjectorEpi
             AddPostActivationAction(() => _commandProcessor = new CmdProcessor(_coms));
             AddPostActivationAction(() => CommunicationMonitor = new GenericCommunicationMonitor(this, _coms, props.Monitor));
             AddPostActivationAction(BuildStates);
-            AddPostActivationAction(BuildFeedbacks);
             AddPostActivationAction(StartPolls);
             AddPostActivationAction(StartCommunicationMonitor);
         }
 
         void BuildStates()
         {
-            _powerStateManager = new CmdStateManager<ProjectorPower>(Key + "PowerStateManager", _coms);
-            Power = new PowerOffState(this);
+            BuildFeedbacks();
 
-            Input = new InputStateHdmi(this);
+            _powerStateManager = new CmdStateManager<ProjectorPower>(Key + "PowerStateManager", _coms);
+            _power = new PowerOffState(this);
+
+            _input = new InputStateHdmi(this);
             _inputStateManger = new CmdStateManager<ProjectorInput>(Key + "InputStateManager", _coms);
 
-            Mute = new MuteOffState(this);
+            _mute = new MuteOffState(this);
             _muteStateManager = new CmdStateManager<ProjectorMute>(Key + "MuteStateManager", _coms);
 
             _serialNumberStateManager = new SerialNumberStateManager(Key + "SerialNumberManager", _coms);
             _lampHoursStateManager = new LampHoursStateManager(Key + "LampHoursStateManager", _coms);
 
             SubscribeToStateManagers();
+
+            PowerIsOnFeedback.FireUpdate();
+            IsCoolingDownFeedback.FireUpdate();
+            IsWarmingUpFeedback.FireUpdate();
+            CurrentInputValueFb.FireUpdate();
+            CurrentInputFeedback.FireUpdate();
+            MuteIsOnFb.FireUpdate();
         }
 
         void SubscribeToStateManagers()
@@ -155,8 +168,17 @@ namespace EpsonProjectorEpi
                     Mute = MuteState.GetMuteStateForProjector(Mute, _muteStateManager.State);
                 };
 
-            _serialNumberStateManager.StateUpdated += (sender, args) => SerialNumberFb.FireUpdate();
-            _lampHoursStateManager.StateUpdated += (sender, args) => LampHoursFb.FireUpdate();
+            _serialNumberStateManager.StateUpdated += (sender, args) =>
+                {
+                    Debug.Console(2, this, "Serial Number Updated : '{0}'", _serialNumberStateManager.State);
+                    SerialNumberFb.FireUpdate();
+                };
+
+            _lampHoursStateManager.StateUpdated += (sender, args) =>
+                {
+                    Debug.Console(2, this, "Lamp Hours Updated : '{0}'", _lampHoursStateManager.State);
+                    LampHoursFb.FireUpdate();
+                };
         }
 
         void BuildFeedbacks()
