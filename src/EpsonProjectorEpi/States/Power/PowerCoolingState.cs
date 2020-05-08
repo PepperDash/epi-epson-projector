@@ -26,7 +26,7 @@ namespace EpsonProjectorEpi.States.Power
 
         public override void PowerOn()
         {
-            Poll();
+            return;
         }
 
         public override void PowerOff()
@@ -36,7 +36,7 @@ namespace EpsonProjectorEpi.States.Power
 
         public override void PowerToggle()
         {
-            Poll();
+            return;
         }
 
         public override bool PowerIsOn

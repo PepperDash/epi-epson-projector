@@ -11,6 +11,7 @@ using EpsonProjectorEpi.Commands;
 using EpsonProjectorEpi.Queries;
 using EpsonProjectorEpi.Config;
 using EpsonProjectorEpi.States;
+using EpsonProjectorEpi.Enums;
 
 namespace EpsonProjectorEpi
 {

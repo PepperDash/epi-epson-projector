@@ -8,10 +8,10 @@ using EpsonProjectorEpi.Enums;
 
 namespace EpsonProjectorEpi.Enums
 {
-    public class ProjectorInput : CmdEnumeration<ProjectorInput>
+    public abstract class ProjectorInput : CmdEnumeration<ProjectorInput>
     {
-        private ProjectorInput(int value, string name, IEpsonCmd cmd, string response)
-            : base(value, name, cmd, response)
+        private ProjectorInput(int value, string name)
+            : base(value, name)
         {
             
         }
@@ -20,12 +20,72 @@ namespace EpsonProjectorEpi.Enums
         {
             SearchString = "SOURCE";
             Default = Hdmi;
-            Unknown = new ProjectorInput(99, "Unknown", CustomCmd.Empty, String.Empty);
+            Unknown = new UnknownEnum();
         }
 
-        public static readonly ProjectorInput Hdmi = new ProjectorInput(1, "Hdmi", new SourceInputHdmiCmd(), "SOURCE=A0");
-        public static readonly ProjectorInput Dvi = new ProjectorInput(2, "Dvi", new SourceInputDviCmd(), "SOURCE=30");
-        public static readonly ProjectorInput Computer = new ProjectorInput(3, "Computer", new SourceInputComputerCmd(), "SOURCE=11");
-        public static readonly ProjectorInput Video = new ProjectorInput(4, "Video", new SourceInputVideoCmd(), "SOURCE=45");
+        public static readonly ProjectorInput Hdmi = new InputHdmiEnum();
+        public static readonly ProjectorInput Dvi = new InputDviEnum();
+        public static readonly ProjectorInput Computer = new InputComputerEnum();
+        public static readonly ProjectorInput Video = new InputVideoEnum();
+
+        private sealed class InputHdmiEnum : ProjectorInput
+        {
+            public InputHdmiEnum()
+                : base (1, "Hdmi")
+            {
+
+            }
+
+            public override IEpsonCmd Cmd { get { return new SourceInputHdmiCmd(); } }
+            public override string  Response { get { return "SOURCE=A0"; } }
+        }
+
+        private sealed class InputDviEnum : ProjectorInput
+        {
+            public InputDviEnum()
+                : base(2, "DVI")
+            {
+
+            }
+
+            public override IEpsonCmd Cmd { get { return new SourceInputDviCmd(); } }
+            public override string Response { get { return "SOURCE=30"; } }
+        }
+
+        private class InputComputerEnum : ProjectorInput
+        {
+            public InputComputerEnum()
+                : base(3, "Computer")
+            {
+
+            }
+
+            public override IEpsonCmd Cmd { get { return new SourceInputComputerCmd(); } }
+            public override string Response { get { return "SOURCE=11"; } }
+        }
+
+        private sealed class InputVideoEnum : ProjectorInput
+        {
+            public InputVideoEnum()
+                : base(4, "Video")
+            {
+
+            }
+
+            public override IEpsonCmd Cmd { get { return new SourceInputVideoCmd(); } }
+            public override string Response { get { return "SOURCE=45"; } }
+        }
+
+        private sealed class UnknownEnum : ProjectorInput
+        {
+            public UnknownEnum()
+                : base(99, "Unknown")
+            {
+
+            }
+
+            public override IEpsonCmd Cmd { get { return CustomCmd.Empty; } }
+            public override string Response { get { return String.Empty; } }
+        }
     }
 }

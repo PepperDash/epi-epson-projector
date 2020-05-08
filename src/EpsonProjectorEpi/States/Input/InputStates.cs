@@ -22,7 +22,7 @@ namespace EpsonProjectorEpi.States.Input
             : base(proj)
         {
             _currentState = ProjectorInput.Hdmi;
-        }
+        }   
     }
 
     public class InputStateDvi : InputState

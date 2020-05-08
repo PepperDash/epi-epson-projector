@@ -26,12 +26,12 @@ namespace EpsonProjectorEpi.States.Power
 
         public override void PowerOn()
         {
-            Poll();
+            return;
         }
 
         public override void PowerOff()
         {
-            Poll();
+            return;
         }
 
         public override void PowerToggle()
@@ -52,6 +52,11 @@ namespace EpsonProjectorEpi.States.Power
         public override bool ProjectorIsCooling
         {
             get { return false; }
+        }
+
+        static void TimerCallback(object obj)
+        {
+
         }
     }
 }

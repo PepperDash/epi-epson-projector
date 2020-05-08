@@ -57,6 +57,7 @@ namespace EpsonProjectorEpi.Commands
                 {
                     try
                     {
+                        Debug.Console(0, coms, "Sending a string {0}", cmd.CmdString);
                         new CmdHandler(coms, cmd).Handle();
                         Thread.Sleep(50);
                     }

@@ -31,7 +31,8 @@ namespace EpsonProjectorEpi.States.Power
 
         public override void PowerOff()
         {
-            SendPwrCmd(ProjectorPower.PowerOff);
+            Proj.EnqueueCmd(ProjectorPower.PowerOff.Cmd);
+            UpdateState(_currentState.Next);
         }
 
         public override void PowerToggle()

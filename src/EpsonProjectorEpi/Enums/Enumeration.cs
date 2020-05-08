@@ -18,6 +18,9 @@ namespace EpsonProjectorEpi.Enums
             Value = value;
             Name = name;
 
+            if (_all.Contains(this as TEnum))
+                throw new ArgumentException("Can't have multiple enums of the same value");
+
             _all.Add(this as TEnum);
         }
 

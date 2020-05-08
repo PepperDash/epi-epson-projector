@@ -24,6 +24,20 @@ namespace EpsonProjectorEpi.States.Power
         public abstract bool ProjectorIsWarming { get; }
         public abstract bool ProjectorIsCooling { get; }
 
+        protected bool _confirmed;
+        public bool Confirmed
+        {
+            get { return _confirmed; }
+            set
+            {
+                if (_confirmed)
+                    return;
+
+                Debug.Console(0, this, "Power state confirmed : {0}", _currentState.Name);
+                _confirmed = value;
+            }
+        }
+
         protected PowerState(EpsonProjector proj)
             : base(proj)
         {
@@ -33,18 +47,12 @@ namespace EpsonProjectorEpi.States.Power
             _key = builder.ToString();
         }
 
-        protected void SendPwrCmd(ProjectorPower power)
-        {
-            if (power == _currentState || power == ProjectorPower.Unknown)
-                return;
-
-            Proj.EnqueueCmd(power.Cmd);
-            UpdateState(power);
-        }
-
         protected override void UpdateState(ProjectorPower state)
         {
-            Debug.Console(2, this, "Updating projector power to: {0}", state.Name);
+            if (state == Current)
+                return;
+
+            Debug.Console(0, this, "Updating projector power to: '{0}'", state.Name);
             Proj.Power = GetPowerStateForProjectorPower(this, state);
         }
 

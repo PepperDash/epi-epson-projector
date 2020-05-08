@@ -16,8 +16,19 @@ namespace EpsonProjectorEpi.States.Input
     {
         private readonly string _key;
 
-        private ProjectorInput _requestedInput = null;
-        private bool _requestedPower = false;
+        protected bool _confirmed;
+        public bool Confirmed
+        {
+            get { return _confirmed; }
+            set
+            {
+                if (_confirmed)
+                    return;
+
+                Debug.Console(0, this, "Input state confirmed : {0}", _currentState.Name);
+                _confirmed = value;
+            }
+        }
 
         public int InputNumber 
         { 
@@ -35,77 +46,25 @@ namespace EpsonProjectorEpi.States.Input
             }
         }
 
-        public void SetInput(int input)
+        public virtual void SetInput(int input)
         {
-            if (CheckForProjectorMute(input))
+            if (input == 0)
+            {
+                Proj.MuteOn();
                 return;
+            }
 
             ProjectorInput newInput;
             if (!ProjectorInput.TryFromValue(input, out newInput))
                 return;
 
-            if (newInput == _currentState)
-                return;  
-
-            if (Proj.Power.PowerIsOn)
-            {
-                SendInputCmd(newInput);
-            }
-            else if (Proj.Power.ProjectorIsWarming)
-            {
-                _requestedInput = newInput;
-            }
-            else if (Proj.Power.ProjectorIsCooling)
-            {
-                _requestedInput = newInput;
-                _requestedPower = true;
-            }
-            else
-            {
-                _requestedInput = newInput;
-                Proj.Power.PowerOn();
-            }
+            SetInput(newInput);
         }
 
         public void SetInput(ProjectorInput input)
         {
-            if (input == _currentState) return;
-            SendInputCmd(input);
-        }
-
-        public void PowerIsUpdated()
-        {
-            if (!Proj.Power.PowerIsOn && !Proj.Power.ProjectorIsCooling && !Proj.Power.ProjectorIsWarming)
-                return;
-
-            if (_requestedPower)
-                Proj.Power.PowerOn();
-
-            _requestedPower = false;
-        }
-
-        private bool CheckForProjectorMute(int input)
-        {
-            _requestedInput = null;
-
-            if (input == 0 && Proj.Power.PowerIsOn)
-            {
-                Proj.MuteOn();
-                return true;
-            }
-
-            if (input > 0 && Proj.Mute.MuteIsOn)
-            {
-                Proj.MuteOff();
-                return false;
-            }
-
-            return false;
-        }
-
-        private void SendInputCmd(ProjectorInput input)
-        {
-            Proj.EnqueueCmd(input.Cmd);
+            Proj.MuteOff();
+            Proj.PowerOn();
             UpdateState(input);
         }
 
@@ -125,17 +84,12 @@ namespace EpsonProjectorEpi.States.Input
 
         protected override void UpdateState(ProjectorInput state)
         {
-            if (_currentState == state)
-            {
-                _requestedInput = null;
+            if (_currentState == state || state == ProjectorInput.Unknown)
                 return;
-            }
 
-            Debug.Console(2, this, "Updating projector input to: {0}", state.Name);
+            Debug.Console(0, this, "Updating projector input to: {0}", state.Name);
+            Proj.EnqueueCmd(state.Cmd);
             Proj.Input = GetStateForProjectorInput(this, state);
-
-            if (_requestedInput != null && _requestedInput != state)
-                SendInputCmd(_requestedInput);
         }
 
         public static InputState GetStateForProjectorInput(InputState state, ProjectorInput input)

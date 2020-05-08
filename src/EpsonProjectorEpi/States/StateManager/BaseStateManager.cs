@@ -25,7 +25,7 @@ namespace EpsonProjectorEpi.States
             _gather.LineReceived += HandleLineReceived;
         }
 
-        private void HandleLineReceived(object sender, GenericCommMethodReceiveTextArgs e)
+        protected virtual void HandleLineReceived(object sender, GenericCommMethodReceiveTextArgs e)
         {
             if (String.IsNullOrEmpty(e.Text)) return;
             ProcessData(e.Text);
