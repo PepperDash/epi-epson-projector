@@ -21,7 +21,14 @@ namespace EpsonProjectorEpi
         {
             PepperDash.Essentials.Core.DeviceFactory.AddFactoryForType("epsonprojector", config =>
                 {
-                    return new EpsonProjector(config).BuildInputs();
+                    ProjectorPower.Default = ProjectorPower.PowerOff;
+                    ProjectorInput.Default = ProjectorInput.Hdmi;
+                    ProjectorMute.Default = ProjectorMute.MuteOff;
+
+                    var coms = CommFactory.CreateCommForDevice(config);
+                    var props = PropsConfig.FromDeviceConfig(config);
+
+                    return new EpsonProjector(config.Key, config.Name, props, coms).BuildInputs();
                 });
         }
     }

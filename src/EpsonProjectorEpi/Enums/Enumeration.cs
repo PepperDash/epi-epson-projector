@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using PepperDash.Core;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.Reflection;
 
@@ -19,8 +20,12 @@ namespace EpsonProjectorEpi.Enums
             Name = name;
 
             if (_all.Contains(this as TEnum))
+            {
+                Debug.Console(0, "Error in the Enum Constructor - _all Contains this already - {0} | {1}", Name, GetType().Name);
                 throw new ArgumentException("Can't have multiple enums of the same value");
+            }
 
+            Debug.Console(0, "Adding '{0}' to Enum:{1}", Name, GetType().Name); 
             _all.Add(this as TEnum);
         }
 

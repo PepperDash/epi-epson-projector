@@ -13,26 +13,24 @@ namespace EpsonProjectorEpi.Extensions
 {
     public static class EpsonExtensions
     {
-        public static IKeyed BuildInputs(this IKeyed device)
+        public static IKeyed BuildInputs(this IRoutingInputs device)
         {
-            var display = device as IRoutingInputs;
-            if (display == null) return device;
-
-            foreach (var input in ProjectorInput.GetAll().OrderBy(x => x.Value))
+            foreach (var input in ProjectorInput.GetAll())
             {
-                if (input == ProjectorInput.Unknown)
-                    continue;
+                Debug.Console(0, device, "Adding Routing input - {0}", input.Name);
 
-                display.InputPorts.Add(
-                    new RoutingInputPort(
-                        display.Key + "-" + input.Name,
+                var newInput = new RoutingInputPort(
+                        device.Key + "-" + input.Name,
                         eRoutingSignalType.Video,
                         eRoutingPortConnectionType.BackplaneOnly,
                         input,
-                        display));
+                        device);
+
+
+                device.InputPorts.Add(newInput);
             }
-            
-            return display;
+
+            return device;
         }
     }
 }

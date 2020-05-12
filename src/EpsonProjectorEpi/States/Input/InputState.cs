@@ -84,7 +84,7 @@ namespace EpsonProjectorEpi.States.Input
 
         protected override void UpdateState(ProjectorInput state)
         {
-            if (_currentState == state || state == ProjectorInput.Unknown)
+            if (_currentState == state)
                 return;
 
             Debug.Console(0, this, "Updating projector input to: {0}", state.Name);

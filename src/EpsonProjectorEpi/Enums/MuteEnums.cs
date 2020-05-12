@@ -12,14 +12,7 @@ namespace EpsonProjectorEpi.Enums
         private ProjectorMute(int value, string name)
             : base (value, name)
         {
-            
-        }
-
-        static ProjectorMute()
-        {
             SearchString = "MUTE";
-            Default = MuteOff;
-            Unknown = new UnknownEnum();
         }
 
         public static readonly ProjectorMute MuteOn = new MuteOnEnum();
@@ -60,25 +53,6 @@ namespace EpsonProjectorEpi.Enums
             public override string Response
             {
                 get { return "MUTE=OFF"; }
-            }
-        }
-
-        private class UnknownEnum : ProjectorMute
-        {
-            public UnknownEnum()
-                : base(99, "Unknown")
-            {
-
-            }
-
-            public override IEpsonCmd Cmd
-            {
-                get { return CustomCmd.Empty; }
-            }
-
-            public override string Response
-            {
-                get { return String.Empty; }
             }
         }
     }

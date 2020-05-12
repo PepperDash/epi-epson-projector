@@ -32,9 +32,6 @@ namespace EpsonProjectorEpi
 
             foreach (var input in ProjectorInput.GetAll())
             {
-                if (input == ProjectorInput.Unknown) 
-                    continue;
-
                 var inputActual = input;
                 var joinActual = inputActual.Value + joinMap.InputSelectOffset;
 

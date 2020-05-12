@@ -13,14 +13,7 @@ namespace EpsonProjectorEpi.Enums
         private ProjectorInput(int value, string name)
             : base(value, name)
         {
-            
-        }
-
-        static ProjectorInput()
-        {
             SearchString = "SOURCE";
-            Default = Hdmi;
-            Unknown = new UnknownEnum();
         }
 
         public static readonly ProjectorInput Hdmi = new InputHdmiEnum();
@@ -74,18 +67,6 @@ namespace EpsonProjectorEpi.Enums
 
             public override IEpsonCmd Cmd { get { return new SourceInputVideoCmd(); } }
             public override string Response { get { return "SOURCE=45"; } }
-        }
-
-        private sealed class UnknownEnum : ProjectorInput
-        {
-            public UnknownEnum()
-                : base(99, "Unknown")
-            {
-
-            }
-
-            public override IEpsonCmd Cmd { get { return CustomCmd.Empty; } }
-            public override string Response { get { return String.Empty; } }
         }
     }
 }

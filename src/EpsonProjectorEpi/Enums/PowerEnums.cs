@@ -12,14 +12,7 @@ namespace EpsonProjectorEpi.Enums
         private ProjectorPower(int value, string name)
             : base (value, name)
         {
-            
-        }
-
-        static ProjectorPower()
-        {
             SearchString = "PWR";
-            Default = ProjectorPower.PowerOff;
-            Unknown = new UnknownEnum();
         }
 
         public abstract ProjectorPower Next { get; }
@@ -30,6 +23,7 @@ namespace EpsonProjectorEpi.Enums
         public static readonly ProjectorPower Cooling = new PowerCoolingEnum();
         public static readonly ProjectorPower Standby = new PowerStandbyEnum();
         public static readonly ProjectorPower AbnormalityStandby = new PowerAbnormalStandbyEnum();
+        public static readonly ProjectorPower Unknown = new UnknownEnum();
 
         private sealed class PowerOffEnum : ProjectorPower
         {
@@ -112,7 +106,7 @@ namespace EpsonProjectorEpi.Enums
         private sealed class UnknownEnum : ProjectorPower
         {
             public UnknownEnum()
-                : base(5, "Unknown")
+                : base(99, "Unknown")
             {
 
             }

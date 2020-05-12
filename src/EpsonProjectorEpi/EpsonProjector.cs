@@ -115,20 +115,23 @@ namespace EpsonProjectorEpi
 
         public string ScreenName { get; private set; }
 
-        public EpsonProjector(DeviceConfig config)
-            : base(config.Key, config.Name)
+        public EpsonProjector(string key, string name, PropsConfig config, IBasicCommunication coms)
+            : base(key, name)
         {
-            var props = PropsConfig.FromDeviceConfig(config);
-            ScreenName = props.ScreenName;
+            ScreenName = config.ScreenName;
             WarmupTime = 30000;
             CooldownTime = 30000;
 
-            _coms = CommFactory.CreateCommForDevice(config);
+            _coms = coms;
 
-            if (props.Monitor == null)
-                props.Monitor = new CommunicationMonitorConfig();
+            if (config.Monitor == null)
+                config.Monitor = new CommunicationMonitorConfig();
 
-            CommunicationMonitor = new GenericCommunicationMonitor(this, _coms, props.Monitor);
+            CommunicationMonitor = new GenericCommunicationMonitor(this, _coms, config.Monitor);
+
+            AddPostActivationAction(BuildStates);
+            AddPostActivationAction(StartPolls);
+            AddPostActivationAction(StartCommunicationMonitor);
         }
 
         public override bool CustomActivate()
@@ -138,10 +141,6 @@ namespace EpsonProjectorEpi
 
             _commandProcessor = new CmdProcessor(_coms);
 
-            AddPostActivationAction(BuildStates);
-            AddPostActivationAction(StartPolls);
-            AddPostActivationAction(StartCommunicationMonitor);
-
             return true;
         }
 
@@ -149,8 +148,8 @@ namespace EpsonProjectorEpi
         {
             BuildFeedbacks();
 
-            _powerStateManager = new CmdStateManager<ProjectorPower>(Key + "PowerStateManager", _coms);
             _power = new PowerOffState(this);
+            _powerStateManager = new CmdStateManager<ProjectorPower>(Key + "PowerStateManager", _coms);   
 
             _input = new InputStateHdmi(this);
             _inputStateManger = new CmdStateManager<ProjectorInput>(Key + "InputStateManager", _coms);
@@ -257,6 +256,24 @@ namespace EpsonProjectorEpi
             MuteIsOffFb = new BoolFeedback(() => !_mute.MuteIsOn);
             StatusFb = new StringFeedback(() => CommunicationMonitor.Status.ToString());
             CurrentInputValueFb = new IntFeedback(() => _power.PowerIsOn ? _input.InputNumber : 0);
+        }
+
+        private void BuildRoutingInputs()
+        {
+            foreach (var input in ProjectorInput.GetAll())
+            {
+                var inputActual = input;
+                Debug.Console(0, this, "Adding Routing input - {0}", inputActual.Name);
+
+                var newInput = new RoutingInputPort(
+                        inputActual.Name,
+                        eRoutingSignalType.Video,
+                        eRoutingPortConnectionType.BackplaneOnly,
+                        inputActual,
+                        this);
+
+                InputPorts.Add(newInput);
+            }
         }
 
         private void StartCommunicationMonitor()

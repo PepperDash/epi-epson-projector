@@ -21,11 +21,7 @@ namespace EpsonProjectorEpi.Queries
 
         public override T Handle()
         {
-            if (String.IsNullOrEmpty(_response) || !_response.Contains(CmdEnumeration<T>.SearchString))
-                return CmdEnumeration<T>.Unknown as T;
-
-            var result = CmdEnumeration<T>.GetAll().FirstOrDefault(x => Regex.IsMatch(_response, x.Response));
-            return result ?? CmdEnumeration<T>.Unknown as T;
+            return CmdEnumeration<T>.GetAll().FirstOrDefault(x => Regex.IsMatch(_response, x.Response));
         }
     }
 }

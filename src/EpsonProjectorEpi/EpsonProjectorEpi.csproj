@@ -90,6 +90,7 @@
     <Compile Include="Commands\CmdProcessor.cs" />
     <Compile Include="Commands\CustomCmd.cs" />
     <Compile Include="Commands\InputCmds.cs" />
+    <Compile Include="Enums\Interfaces.cs" />
     <Compile Include="Polling\IPollManager.cs" />
     <Compile Include="Commands\MuteCmds.cs" />
     <Compile Include="Commands\Polls.cs" />
