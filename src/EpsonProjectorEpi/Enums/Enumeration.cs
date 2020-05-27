@@ -18,15 +18,6 @@ namespace EpsonProjectorEpi.Enums
         {
             Value = value;
             Name = name;
-
-            if (_all.Contains(this as TEnum))
-            {
-                Debug.Console(0, "Error in the Enum Constructor - _all Contains this already - {0} | {1}", Name, GetType().Name);
-                throw new ArgumentException("Can't have multiple enums of the same value");
-            }
-
-            Debug.Console(0, "Adding '{0}' to Enum:{1}", Name, GetType().Name); 
-            _all.Add(this as TEnum);
         }
 
         public override string ToString()
@@ -34,9 +25,21 @@ namespace EpsonProjectorEpi.Enums
             return Name;
         }
 
-        static readonly List<TEnum> _all = new List<TEnum>();
+        private static readonly CCriticalSection _lock = new CCriticalSection();
+        private static IEnumerable<TEnum> _all;
         public static IEnumerable<TEnum> GetAll()
         {
+            _lock.Enter();
+            try
+            {
+                if (_all == null)
+                    _all = GetAllOptions();
+            }
+            finally
+            {
+                _lock.Leave();
+            }
+
             return _all;
         }
 
@@ -69,6 +72,117 @@ namespace EpsonProjectorEpi.Enums
             return base.GetHashCode();
         }
 
+        /*static readonly object _fromNameLock = new object();
+        static Dictionary<string, TEnum> _fromNameObject = null;
+        static Dictionary<string, TEnum> _fromName
+        {
+            get
+            {
+                CMonitor.Enter(_fromNameLock);
+                try
+                {
+                    if (_fromNameObject == null)
+                    {
+                        _fromNameObject = _all.ToDictionary(item => item.Name);
+                    }
+                }
+                finally
+                {
+                    CMonitor.Exit(_fromNameLock);     
+                }
+
+                return _fromNameObject;
+            }
+        }
+
+        static readonly object _fromNameIgnoreCaseLock = new object();
+        static Dictionary<string, TEnum> _fromNameIgnoreCaseObject = null;
+        static Dictionary<string, TEnum> _fromNameIgnoreCase
+        {
+            get
+            {
+                CMonitor.Enter(_fromNameIgnoreCaseLock);
+                try
+                {
+                    if (_fromNameIgnoreCaseObject == null)
+                    {
+                        _fromNameIgnoreCaseObject = _all.ToDictionary(item => item.Name, StringComparer.OrdinalIgnoreCase);
+                    }
+                }
+                finally
+                {
+                    CMonitor.Exit(_fromNameIgnoreCaseLock);
+                }
+
+                return _fromNameObject;
+            }
+        }
+
+        static readonly object _fromValueLock = new object();
+        static Dictionary<int, TEnum> _fromValueObject = null;
+        static Dictionary<int, TEnum> _fromValue
+        {
+            get
+            {
+                CMonitor.Enter(_fromValueLock);
+                try
+                {
+                    if (_fromValueObject == null)
+                    {
+                        _fromValueObject = _all.ToDictionary(x => x.Value);
+                    }
+                }
+                finally
+                {
+                    CMonitor.Exit(_fromValueLock);
+                }
+
+                return _fromValueObject;
+            }
+        }*/
+
+        static IEnumerable<TEnum> GetAllOptions()
+        {
+            try
+            {
+                var baseType = typeof(TEnum).GetCType();
+                var a = baseType.Assembly;
+
+                Debug.Console(0, "Base type: {0}", baseType.Name);
+                IEnumerable<CType> enumTypes = a.GetTypes().Where(t => baseType.IsAssignableFrom(t));
+
+                List<TEnum> options = new List<TEnum>();
+                foreach (var enumType in enumTypes)
+                {
+                    Debug.Console(0, "Found enum type: {0}", enumType.Name);
+                    var fields = enumType.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.DeclaredOnly)
+                        .Select(x => x.GetValue(null))
+                        .Cast<TEnum>();
+
+                    foreach (var field in fields)
+                    {
+                        if (field == null)
+                            continue;
+
+                        Debug.Console(0, "Adding field to this enum:{0} - {1}", field.Name, enumType.Name);
+                        if (options.Contains(field))
+                            throw new Exception("This enum already exists");
+
+                        options.Add(field);
+                    }
+                }
+
+                return options;
+            }
+            catch (Exception ex)
+            {
+                var error = "Error getting all options -" + string.Format("{0}\r{1}\r{2}", ex.Message, ex.InnerException, ex.StackTrace);
+                CrestronConsole.PrintLine(error);
+                Debug.Console(0, "{0}", error);
+                throw;
+            }
+        }
+
         public static TEnum FromName(string name, bool ignoreCase)
         {
             if (String.IsNullOrEmpty(name))
@@ -84,7 +198,7 @@ namespace EpsonProjectorEpi.Enums
             }
             else
             {
-                var result = _all.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+                var result = _all.FirstOrDefault(x => x.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase));
                 if (result == null)
                     throw new ArgumentNullException(name);
 
@@ -95,7 +209,9 @@ namespace EpsonProjectorEpi.Enums
         public static bool TryFromValue(int value, out TEnum result)
         {
             result = _all.FirstOrDefault(x => x.Value == value);
-            return result != null; 
+            if (result == null) return false;
+
+            return true;
         }
 
         public static TEnum FromValue(int value)

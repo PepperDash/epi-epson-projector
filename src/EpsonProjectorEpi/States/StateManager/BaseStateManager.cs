@@ -8,7 +8,6 @@ using PepperDash.Essentials.Core;
 using EpsonProjectorEpi.Enums;
 using EpsonProjectorEpi.Commands;
 using EpsonProjectorEpi.Queries;
-using EpsonProjectorEpi.States.Power;
 
 namespace EpsonProjectorEpi.States
 {
@@ -35,9 +34,9 @@ namespace EpsonProjectorEpi.States
 
         #region IStateManager<T> Members
 
-        public T State { get; protected set; }
+        public T State { get; private set; }
 
-        public event EventHandler StateUpdated;
+        public event EventHandler<StateUpdatedEventArgs<T>> StateUpdated;
 
         #endregion
 
@@ -68,12 +67,22 @@ namespace EpsonProjectorEpi.States
             Dispose(false);
         }
 
-        protected virtual void OnStateUpdated()
+        protected virtual void OnStateUpdated(T state)
         {
+            if (state.Equals(State))
+                return;
+
+            State = state;
+
             var handler = StateUpdated;
             if (handler == null) return;
 
-            handler.Invoke(this, EventArgs.Empty);
+            handler.Invoke(this, new StateUpdatedEventArgs<T> { CurrentState = state });
         }
+    }
+
+    public class StateUpdatedEventArgs<T> : EventArgs
+    {
+        public T CurrentState { get; set; }
     }
 }

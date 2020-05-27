@@ -7,12 +7,12 @@ using PepperDash.Core;
 
 namespace EpsonProjectorEpi.Commands
 {
-    public class CmdHandler
+    public class CommandHandler
     {
         readonly IBasicCommunication _coms;
         readonly IEpsonCmd _cmd;
 
-        public CmdHandler(IBasicCommunication coms, IEpsonCmd cmd)
+        public CommandHandler(IBasicCommunication coms, IEpsonCmd cmd)
         {
             _coms = coms;
             _cmd = cmd;
@@ -22,8 +22,6 @@ namespace EpsonProjectorEpi.Commands
         {
             if (_cmd == null || String.IsNullOrEmpty(_cmd.CmdString))
                 return false;
-
-            Debug.Console(2, _coms, "Attempting to send string {0}", _cmd.CmdString);
 
             var cmd = new StringBuilder(_cmd.CmdString);
             cmd.Append('\x0D');

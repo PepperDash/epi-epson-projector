@@ -6,6 +6,6 @@ namespace EpsonProjectorEpi.States
     public interface IStateManager<T> : IDisposable, IKeyed
     {
         T State { get; }
-        event EventHandler StateUpdated;
+        event EventHandler<StateUpdatedEventArgs<T>> StateUpdated;
     }
 }

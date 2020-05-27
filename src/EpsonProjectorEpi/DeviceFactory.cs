@@ -15,21 +15,36 @@ using EpsonProjectorEpi.Enums;
 
 namespace EpsonProjectorEpi
 {
-    public class DeviceFactory
+    public class DeviceFactory : EssentialsPluginDeviceFactory<EpsonProjector>
     {
-        public static void LoadPlugin()
+        public DeviceFactory()
         {
-            PepperDash.Essentials.Core.DeviceFactory.AddFactoryForType("epsonprojector", config =>
-                {
-                    ProjectorPower.Default = ProjectorPower.PowerOff;
-                    ProjectorInput.Default = ProjectorInput.Hdmi;
-                    ProjectorMute.Default = ProjectorMute.MuteOff;
+            MinimumEssentialsFrameworkVersion = "1.5.4";
+            TypeNames = new List<string>() { "epsonProjector" };
+        }
 
-                    var coms = CommFactory.CreateCommForDevice(config);
-                    var props = PropsConfig.FromDeviceConfig(config);
+        public override EssentialsDevice BuildDevice(DeviceConfig dc)
+        {
+            var props = PropsConfig.FromDeviceConfig(dc);
+            var coms = CommFactory.CreateCommForDevice(dc);
+            var device = new EpsonProjector(dc.Key, dc.Name, props, coms);
 
-                    return new EpsonProjector(config.Key, config.Name, props, coms).BuildInputs();
-                });
+            foreach (var input in ProjectorInput.GetAll())
+            {
+                Debug.Console(0, device, "Adding Routing input - {0}", input.Name);
+
+                var newInput = new RoutingInputPort(
+                        device.Key + "-" + input.Name,
+                        eRoutingSignalType.Video,
+                        eRoutingPortConnectionType.BackplaneOnly,
+                        input,
+                        device);
+
+
+                device.InputPorts.Add(newInput);
+            }
+
+            return device;
         }
     }
 }

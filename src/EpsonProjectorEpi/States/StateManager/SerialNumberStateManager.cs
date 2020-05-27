@@ -8,7 +8,6 @@ using PepperDash.Essentials.Core;
 using EpsonProjectorEpi.Enums;
 using EpsonProjectorEpi.Commands;
 using EpsonProjectorEpi.Queries;
-using EpsonProjectorEpi.States.Power;
 
 namespace EpsonProjectorEpi.States
 {
@@ -27,8 +26,8 @@ namespace EpsonProjectorEpi.States
             if (!data.Contains("SNO"))
                 return;
 
-            State = new SerialNumberResponseProcessor(Key, data).Handle();
-            OnStateUpdated();
+            var result = new SerialNumberResponseProcessor(Key, data).Handle();
+            OnStateUpdated(result);
         }
 
         public override string Key

@@ -8,12 +8,14 @@ using EpsonProjectorEpi.Enums;
 
 namespace EpsonProjectorEpi.Enums
 {
-    public abstract class ProjectorInput : CmdEnumeration<ProjectorInput>
+    public abstract class ProjectorInput : Enumeration<ProjectorInput>
     {
+        public IEpsonCmd Command { get; protected set; }
+
         private ProjectorInput(int value, string name)
             : base(value, name)
         {
-            SearchString = "SOURCE";
+ 
         }
 
         public static readonly ProjectorInput Hdmi = new InputHdmiEnum();
@@ -26,11 +28,8 @@ namespace EpsonProjectorEpi.Enums
             public InputHdmiEnum()
                 : base (1, "Hdmi")
             {
-
+                Command = new SourceInputHdmiCmd();
             }
-
-            public override IEpsonCmd Cmd { get { return new SourceInputHdmiCmd(); } }
-            public override string  Response { get { return "SOURCE=A0"; } }
         }
 
         private sealed class InputDviEnum : ProjectorInput
@@ -38,11 +37,8 @@ namespace EpsonProjectorEpi.Enums
             public InputDviEnum()
                 : base(2, "DVI")
             {
-
+                Command = new SourceInputDviCmd();
             }
-
-            public override IEpsonCmd Cmd { get { return new SourceInputDviCmd(); } }
-            public override string Response { get { return "SOURCE=30"; } }
         }
 
         private class InputComputerEnum : ProjectorInput
@@ -50,11 +46,8 @@ namespace EpsonProjectorEpi.Enums
             public InputComputerEnum()
                 : base(3, "Computer")
             {
-
+                Command = new SourceInputComputerCmd();
             }
-
-            public override IEpsonCmd Cmd { get { return new SourceInputComputerCmd(); } }
-            public override string Response { get { return "SOURCE=11"; } }
         }
 
         private sealed class InputVideoEnum : ProjectorInput
@@ -62,11 +55,8 @@ namespace EpsonProjectorEpi.Enums
             public InputVideoEnum()
                 : base(4, "Video")
             {
-
+                Command = new SourceInputVideoCmd();
             }
-
-            public override IEpsonCmd Cmd { get { return new SourceInputVideoCmd(); } }
-            public override string Response { get { return "SOURCE=45"; } }
         }
     }
 }

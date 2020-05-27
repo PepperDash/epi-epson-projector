@@ -8,15 +8,15 @@ using PepperDash.Essentials.Core;
 using EpsonProjectorEpi.Enums;
 using EpsonProjectorEpi.Commands;
 using EpsonProjectorEpi.Queries;
-using EpsonProjectorEpi.States.Power;
 
 namespace EpsonProjectorEpi.States
 {
-    public class CmdStateManager<T> : BaseStateManager<T> where T : CmdEnumeration<T>
+    public class ResponseStateManager<T, TResponse> :
+        BaseStateManager<TResponse> where T : ResponseEnumeration<T, TResponse>
     {
         private readonly string _key;
 
-        public CmdStateManager(string key, IBasicCommunication coms)
+        public ResponseStateManager(string key, IBasicCommunication coms)
             : base(coms)
         {
             _key = key;
@@ -24,14 +24,15 @@ namespace EpsonProjectorEpi.States
 
         protected override void ProcessData(string data)
         {
-            var searchString = CmdEnumeration<T>.SearchString;
-            if (!data.Contains(searchString))
+            if (!data.Contains(ResponseEnumeration<T, TResponse>.SearchString))
                 return;
 
-            var result = new CmdResponseProcessor<T>(Key, data).Handle();
+            var result = new ResponseProcessor<T, TResponse>(Key, data).Handle();
 
-            State = result;
-            OnStateUpdated();
+            if (result == null)
+                return;
+
+            OnStateUpdated(result.ResponseState);
         }
 
         public override string Key

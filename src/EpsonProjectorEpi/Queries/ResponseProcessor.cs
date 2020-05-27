@@ -9,11 +9,12 @@ using EpsonProjectorEpi.Enums;
 
 namespace EpsonProjectorEpi.Queries
 {
-    public class CmdResponseProcessor<T> : BaseResponseProcessor<T> where T : CmdEnumeration<T>
+    public class ResponseProcessor<T, TResponse> : BaseResponseProcessor<T> 
+        where T : ResponseEnumeration<T, TResponse>
     {
         readonly string _response;
 
-        public CmdResponseProcessor(string key, string response)
+        public ResponseProcessor(string key, string response)
             : base(key)
         {
             _response = response;
@@ -21,7 +22,7 @@ namespace EpsonProjectorEpi.Queries
 
         public override T Handle()
         {
-            return CmdEnumeration<T>.GetAll().FirstOrDefault(x => Regex.IsMatch(_response, x.Response));
+            return ResponseEnumeration<T, TResponse>.GetAll().FirstOrDefault(x => Regex.IsMatch(_response, x.ResponseString));
         }
     }
 }

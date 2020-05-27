@@ -9,17 +9,16 @@ using PepperDash.Essentials.Core;
 using EpsonProjectorEpi.Enums;
 using EpsonProjectorEpi.Commands;
 using EpsonProjectorEpi.Queries;
-using EpsonProjectorEpi.States.Power;
 
 namespace EpsonProjectorEpi.Commands
 {
-    public class CmdProcessor
+    public class CommandProcessor
     {
         private readonly CrestronQueue<IEpsonCmd> _cmdQueue;
         private readonly Thread _worker;
         private readonly CEvent _wh = new CEvent();
 
-        public CmdProcessor(IBasicCommunication coms)
+        public CommandProcessor(IBasicCommunication coms)
         {
             _cmdQueue = new CrestronQueue<IEpsonCmd>();
             _worker = new Thread(ProcessCmd, coms, Thread.eThreadStartOptions.Running);
@@ -58,7 +57,7 @@ namespace EpsonProjectorEpi.Commands
                     try
                     {
                         Debug.Console(0, coms, "Sending a string {0}", cmd.CmdString);
-                        new CmdHandler(coms, cmd).Handle();
+                        new CommandHandler(coms, cmd).Handle();
                         Thread.Sleep(50);
                     }
                     catch (Exception ex)
