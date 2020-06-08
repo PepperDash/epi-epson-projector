@@ -25,16 +25,13 @@ namespace EpsonProjectorEpi.Commands
 
             CrestronEnvironment.ProgramStatusEventHandler += programEvent =>
                 {
-                    switch (programEvent)
-                    {
-                        case eProgramStatusEventType.Stopping:
-                            {
-                                _cmdQueue.Enqueue(null);
-                                _worker.Join();
-                                _wh.Close();
-                                break;
-                            }
-                    };
+                    if (programEvent != eProgramStatusEventType.Stopping)
+                        return;
+
+                    Debug.Console(1, coms, "Shutting down the coms processor...");
+                    _cmdQueue.Enqueue(null);
+                    _worker.Join();
+                    _wh.Close();
                 };
         }
 
@@ -49,14 +46,14 @@ namespace EpsonProjectorEpi.Commands
                 if (_cmdQueue.Count > 0)
                 {
                     cmd = _cmdQueue.Dequeue();
-                    if
-                        (cmd == null) break;
+                    if (cmd == null) 
+                        break;
                 }
                 if (cmd != null)
                 {
                     try
                     {
-                        Debug.Console(0, coms, "Sending a string {0}", cmd.CmdString);
+                        Debug.Console(1, coms, "Sending a string {0}", cmd.CmdString);
                         new CommandHandler(coms, cmd).Handle();
                         Thread.Sleep(50);
                     }
