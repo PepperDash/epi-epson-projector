@@ -12,11 +12,13 @@ using EpsonProjectorEpi.Queries;
 
 namespace EpsonProjectorEpi.Commands
 {
-    public class CommandProcessor
+    public class CommandProcessor : IDisposable
     {
         private readonly CrestronQueue<IEpsonCmd> _cmdQueue;
         private readonly Thread _worker;
         private readonly CEvent _wh = new CEvent();
+
+        public bool Disposed { get; private set; }
 
         public CommandProcessor(IBasicCommunication coms)
         {
@@ -29,9 +31,7 @@ namespace EpsonProjectorEpi.Commands
                         return;
 
                     Debug.Console(1, coms, "Shutting down the coms processor...");
-                    _cmdQueue.Enqueue(null);
-                    _worker.Join();
-                    _wh.Close();
+                    Dispose();
                 };
         }
 
@@ -73,5 +73,35 @@ namespace EpsonProjectorEpi.Commands
             _cmdQueue.Enqueue(cmd);
             _wh.Set();
         }
+
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            Dispose(true);
+            CrestronEnvironment.GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (Disposed)
+                return;
+
+            if (disposing)
+            {
+                EnqueueCmd(null);
+                _worker.Join();
+                _wh.Close();
+            }
+
+            Disposed = true;
+        }
+
+        ~CommandProcessor()
+        {
+            Dispose(false);
+        }
+
+        #endregion
     }
 }

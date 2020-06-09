@@ -28,14 +28,20 @@ namespace EpsonProjectorEpi
             trilist.SetSigTrueAction(joinMap.MuteToggle.JoinNumber, proj.MuteToggle);
             trilist.SetUShortSigAction(joinMap.InputSelectOffset.JoinNumber, x => proj.ExecuteSwitchNumeric(x));
 
-            foreach (var input in ProjectorInput.GetAll())
+            for (int x = 0; x < joinMap.InputSelectOffset.JoinNumber; x++)
             {
-                var inputActual = input;
-                var joinActual = inputActual.Value + joinMap.InputSelectOffset.JoinNumber - 1;
+                var joinActual = joinMap.InputSelectOffset.JoinNumber + x;
+                var inputActual = x + 1;
+
+                ProjectorInput input;
+                if (!ProjectorInput.TryFromValue(inputActual, out input))
+                    continue;
+
+                Debug.Console(1, proj, "Linking input:{0} to join {1}", input.Name, joinActual);
 
                 trilist.SetSigTrueAction((uint)joinActual, () => proj.ExecuteSwitch(inputActual));
 
-                var fb = new StringFeedback(() => inputActual.Name);
+                var fb = new StringFeedback(() => input.Name);
                 fb.LinkInputSig(trilist.StringInput[(uint)joinActual]);
                 fb.FireUpdate();
             }
@@ -66,6 +72,7 @@ namespace EpsonProjectorEpi
 
     public class EpsonProjectorJoinMap : JoinMapBaseAdvanced
     {
+        [JoinName("Power On")]
         public JoinDataComplete PowerOn = new JoinDataComplete(
             new JoinData()
             {
@@ -79,6 +86,7 @@ namespace EpsonProjectorEpi
                 Label = "Power On"
             });
 
+        [JoinName("Power Off")]
         public JoinDataComplete PowerOff = new JoinDataComplete(
             new JoinData()
             {
@@ -92,6 +100,7 @@ namespace EpsonProjectorEpi
                 Label = "Power Off"
             });
 
+        [JoinName("Warming")]
         public JoinDataComplete Warming = new JoinDataComplete(
             new JoinData()
             {
@@ -105,6 +114,7 @@ namespace EpsonProjectorEpi
                 Label = "Warming"
             });
 
+        [JoinName("Cooling")]
         public JoinDataComplete Cooling = new JoinDataComplete(
             new JoinData()
             {
@@ -118,6 +128,7 @@ namespace EpsonProjectorEpi
                 Label = "Cooling"
             });
 
+        [JoinName("Mute Off")]
         public JoinDataComplete MuteOff = new JoinDataComplete(
             new JoinData()
             {
@@ -131,6 +142,7 @@ namespace EpsonProjectorEpi
                 Label = "Mute Off"
             });
 
+        [JoinName("Mute On")]
         public JoinDataComplete MuteOn = new JoinDataComplete(
             new JoinData()
             {
@@ -144,6 +156,7 @@ namespace EpsonProjectorEpi
                 Label = "Mute On"
             });
 
+        [JoinName("Mute Toggle")]
         public JoinDataComplete MuteToggle = new JoinDataComplete(
             new JoinData()
             {
@@ -157,6 +170,7 @@ namespace EpsonProjectorEpi
                 Label = "Mute Toggle"
             });
 
+        [JoinName("Is Projector")]
         public JoinDataComplete IsProjector = new JoinDataComplete(
             new JoinData()
             {
@@ -170,6 +184,7 @@ namespace EpsonProjectorEpi
                 Label = "Is Projector"
             });
 
+        [JoinName("Is Online")]
         public JoinDataComplete IsOnline = new JoinDataComplete(
             new JoinData()
             {
@@ -183,6 +198,7 @@ namespace EpsonProjectorEpi
                 Label = "Is Online"
             });
 
+        [JoinName("Name")]
         public JoinDataComplete Name = new JoinDataComplete(
             new JoinData()
             {
@@ -196,6 +212,7 @@ namespace EpsonProjectorEpi
                 Label = "Name"
             });
 
+        [JoinName("Status")]
         public JoinDataComplete Status = new JoinDataComplete(
             new JoinData()
             {
@@ -209,6 +226,7 @@ namespace EpsonProjectorEpi
                 Label = "Status"
             });
 
+        [JoinName("Serial Number")]
         public JoinDataComplete SerialNumber = new JoinDataComplete(
             new JoinData()
             {
@@ -222,6 +240,7 @@ namespace EpsonProjectorEpi
                 Label = "Serial Number"
             });
 
+        [JoinName("Screen Name")]
         public JoinDataComplete ScreenName = new JoinDataComplete(
             new JoinData()
             {
@@ -235,6 +254,7 @@ namespace EpsonProjectorEpi
                 Label = "Screen Name"
             });
 
+        [JoinName("Lamp Hours")]
         public JoinDataComplete LampHours = new JoinDataComplete(
             new JoinData()
             {
@@ -248,11 +268,12 @@ namespace EpsonProjectorEpi
                 Label = "Lamp Hours"
             });
 
+        [JoinName("Input Select Offset")]
         public JoinDataComplete InputSelectOffset = new JoinDataComplete(
             new JoinData()
             {
                 JoinNumber = 11,
-                JoinSpan = 1
+                JoinSpan = 10
             },
             new JoinMetadata()
             {
@@ -261,7 +282,8 @@ namespace EpsonProjectorEpi
                 Label = "Input Select"
             });
 
-        public EpsonProjectorJoinMap(uint joinStart) : base (joinStart)
+        public EpsonProjectorJoinMap(uint joinStart)
+            : base(joinStart, typeof(EpsonProjectorJoinMap))
         {
 
         }

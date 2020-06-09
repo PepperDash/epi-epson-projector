@@ -169,7 +169,13 @@ namespace EpsonProjectorEpi
                         config.Monitor = new CommunicationMonitorConfig() { PollString = new PowerPollCmd().CmdString };
 
                     CommunicationMonitor = new GenericCommunicationMonitor(this, _coms, config.Monitor);
-                    CommunicationMonitor.StatusChange += (sender, args) => StatusFb.FireUpdate();
+                    CommunicationMonitor.StatusChange += (sender, args) =>
+                        {
+                            if (!CommunicationMonitor.IsOnline)
+                                CurrentPower = ProjectorPower.PowerOff;
+
+                            StatusFb.FireUpdate();
+                        };
                 });
 
             AddPostActivationAction(() => CurrentPower = ProjectorPower.PowerOff);
@@ -180,6 +186,7 @@ namespace EpsonProjectorEpi
                     {
                         _poll.Stop();
                         _poll.Dispose();
+                        CommunicationMonitor.Stop();
                     }
                 };
         }
@@ -207,6 +214,7 @@ namespace EpsonProjectorEpi
 
         public void ExecuteSwitchNumeric(int input)
         {
+            Debug.Console(1, this, "Attempting to set input to {0}", input);
             if (input == 0)
             {
                 MuteOn();
@@ -351,6 +359,17 @@ namespace EpsonProjectorEpi
                     }, 250);
             }
 
+            if (!CommunicationMonitor.IsOnline)
+            {
+                _poll.Stop();
+                _poll = new CTimer(o =>
+                    {
+                        EnqueueCmd(new PowerPollCmd());
+                    }, null, 250, 30000);
+
+                return;
+            }
+
             if (_currentPower == ProjectorPower.PowerOn)
             {
                 _poll.Stop();
@@ -403,6 +422,8 @@ namespace EpsonProjectorEpi
 
         public void LinkToApi(Crestron.SimplSharpPro.DeviceSupport.BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
         {
+            Debug.Console(1, this, "Attempting to link {0} at {1}", trilist.ID, joinStart);
+
             var joinMap = new EpsonProjectorJoinMap(joinStart);
             if (bridge != null)
             {
