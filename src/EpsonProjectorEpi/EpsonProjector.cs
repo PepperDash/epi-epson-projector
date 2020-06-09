@@ -173,8 +173,8 @@ namespace EpsonProjectorEpi
                         {
                             if (!CommunicationMonitor.IsOnline)
                                 CurrentPower = ProjectorPower.PowerOff;
-
-                            StatusFb.FireUpdate();
+                            else
+                                UpdatePollForPowerState();
                         };
                 });
 
@@ -214,7 +214,6 @@ namespace EpsonProjectorEpi
 
         public void ExecuteSwitchNumeric(int input)
         {
-            Debug.Console(1, this, "Attempting to set input to {0}", input);
             if (input == 0)
             {
                 MuteOn();
@@ -282,7 +281,7 @@ namespace EpsonProjectorEpi
 
         public override void PowerOff()
         {
-            if (_currentPower == ProjectorPower.PowerOff || _currentPower == ProjectorPower.Cooling)
+            if (_currentPower == ProjectorPower.PowerOff || _currentPower == ProjectorPower.Cooling || !CommunicationMonitor.IsOnline)
                 return;
 
             if (_currentPower == ProjectorPower.PowerOn)
@@ -299,7 +298,7 @@ namespace EpsonProjectorEpi
 
         public override void PowerOn()
         {
-            if (_currentPower == ProjectorPower.PowerOn || _currentPower == ProjectorPower.Warming)
+            if (_currentPower == ProjectorPower.PowerOn || _currentPower == ProjectorPower.Warming || !CommunicationMonitor.IsOnline)
                 return;
 
             if (_currentPower == ProjectorPower.PowerOff)
@@ -363,9 +362,9 @@ namespace EpsonProjectorEpi
             {
                 _poll.Stop();
                 _poll = new CTimer(o =>
-                    {
-                        EnqueueCmd(new PowerPollCmd());
-                    }, null, 250, 30000);
+                {
+                    EnqueueCmd(new PowerPollCmd());
+                }, null, 250, 20000);
 
                 return;
             }
