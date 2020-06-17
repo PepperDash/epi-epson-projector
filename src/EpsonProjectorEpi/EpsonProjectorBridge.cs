@@ -39,7 +39,7 @@ namespace EpsonProjectorEpi
 
                 Debug.Console(1, proj, "Linking input:{0} to join {1}", input.Name, joinActual);
 
-                trilist.SetSigTrueAction((uint)joinActual, () => proj.ExecuteSwitch(inputActual));
+                trilist.SetSigTrueAction((uint)joinActual, () => proj.ExecuteSwitch(input));
 
                 var fb = new StringFeedback(() => input.Name);
                 fb.LinkInputSig(trilist.StringInput[(uint)joinActual]);
@@ -72,8 +72,8 @@ namespace EpsonProjectorEpi
 
     public class EpsonProjectorJoinMap : JoinMapBaseAdvanced
     {
-        [JoinName("Power On")]
-        public JoinDataComplete PowerOn = new JoinDataComplete(
+        [JoinName("Power Off")]
+        public JoinDataComplete PowerOff = new JoinDataComplete(
             new JoinData()
             {
                 JoinNumber = 1,
@@ -83,11 +83,11 @@ namespace EpsonProjectorEpi
             {
                 JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
                 JoinType = eJoinType.Digital,
-                Label = "Power On"
+                Label = "Power Off"
             });
 
-        [JoinName("Power Off")]
-        public JoinDataComplete PowerOff = new JoinDataComplete(
+        [JoinName("Power On")]
+        public JoinDataComplete PowerOn = new JoinDataComplete(
             new JoinData()
             {
                 JoinNumber = 2,
@@ -97,7 +97,7 @@ namespace EpsonProjectorEpi
             {
                 JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
                 JoinType = eJoinType.Digital,
-                Label = "Power Off"
+                Label = "Power On"
             });
 
         [JoinName("Warming")]
@@ -132,7 +132,7 @@ namespace EpsonProjectorEpi
         public JoinDataComplete MuteOff = new JoinDataComplete(
             new JoinData()
             {
-                JoinNumber = 8,
+                JoinNumber = 5,
                 JoinSpan = 1
             },
             new JoinMetadata()
@@ -146,7 +146,7 @@ namespace EpsonProjectorEpi
         public JoinDataComplete MuteOn = new JoinDataComplete(
             new JoinData()
             {
-                JoinNumber = 9,
+                JoinNumber = 6,
                 JoinSpan = 1
             },
             new JoinMetadata()
@@ -160,7 +160,7 @@ namespace EpsonProjectorEpi
         public JoinDataComplete MuteToggle = new JoinDataComplete(
             new JoinData()
             {
-                JoinNumber = 10,
+                JoinNumber = 7,
                 JoinSpan = 1
             },
             new JoinMetadata()
@@ -174,7 +174,7 @@ namespace EpsonProjectorEpi
         public JoinDataComplete IsProjector = new JoinDataComplete(
             new JoinData()
             {
-                JoinNumber = 21,
+                JoinNumber = 8,
                 JoinSpan = 1
             },
             new JoinMetadata()

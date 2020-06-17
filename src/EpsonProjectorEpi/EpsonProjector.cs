@@ -31,7 +31,7 @@ namespace EpsonProjectorEpi
 
         private ProjectorPower _currentPower = ProjectorPower.PowerOff;
         private ProjectorMute _currentMute = ProjectorMute.MuteOff;
-        private ProjectorInput _currentInput = ProjectorInput.Hdmi;
+        private ProjectorInput _currentInput = ProjectorInput.Dvi;
 
         public ProjectorPower CurrentPower 
         {
@@ -42,7 +42,7 @@ namespace EpsonProjectorEpi
                 Debug.Console(1, this, "Power set to {0}", _currentPower.Name);
 
                 if (_currentPower == ProjectorPower.PowerOn)
-                    EnqueueCmd(_currentInput.Command);
+                    CheckPowerAndSwitchInput(_currentInput);
 
                 if (_currentPower == ProjectorPower.PowerOff || _currentPower == ProjectorPower.Warming)
                     CurrentMute = ProjectorMute.MuteOff;
@@ -247,10 +247,15 @@ namespace EpsonProjectorEpi
 
         private void CheckPowerAndSwitchInput(ProjectorInput input)
         {
-            if (_currentPower != ProjectorPower.PowerOn)
-                _currentInput = input;
-            else
+            if (_currentPower == ProjectorPower.PowerOn)
+            {
                 EnqueueCmd(input.Command);
+                CurrentInput = input;
+            }
+            else
+            {
+                _currentInput = input;
+            } 
         }
 
         public void EnqueueCmd(IEpsonCmd cmd)
@@ -327,6 +332,7 @@ namespace EpsonProjectorEpi
                 return;
 
             EnqueueCmd(ProjectorMute.MuteOn.Command);
+            CurrentMute = ProjectorMute.MuteOn;
         }
 
         public void MuteOff()
@@ -335,6 +341,7 @@ namespace EpsonProjectorEpi
                 return;
 
             EnqueueCmd(ProjectorMute.MuteOff.Command);
+            CurrentMute = ProjectorMute.MuteOff;
         }
 
         public void MuteToggle()
@@ -376,6 +383,7 @@ namespace EpsonProjectorEpi
                     {
                         EnqueueCmd(new PowerPollCmd());
                         EnqueueCmd(new SourcePollCmd());
+                        EnqueueCmd(new MutePollCmd());
                         EnqueueCmd(new SerialNumberPollCmd());
                         EnqueueCmd(new LampPollCmd());
                     }, null, 250, 10000);

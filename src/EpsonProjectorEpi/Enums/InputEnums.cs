@@ -23,21 +23,21 @@ namespace EpsonProjectorEpi.Enums
         public static readonly ProjectorInput Computer = new InputComputerEnum();
         public static readonly ProjectorInput Video = new InputVideoEnum();
 
-        private sealed class InputHdmiEnum : ProjectorInput
-        {
-            public InputHdmiEnum()
-                : base (1, "Hdmi")
-            {
-                Command = new SourceInputHdmiCmd();
-            }
-        }
-
         private sealed class InputDviEnum : ProjectorInput
         {
             public InputDviEnum()
-                : base(2, "DVI")
+                : base(1, "DVI")
             {
                 Command = new SourceInputDviCmd();
+            }
+        }
+
+        private sealed class InputHdmiEnum : ProjectorInput
+        {
+            public InputHdmiEnum()
+                : base(2, "Hdmi")
+            {
+                Command = new SourceInputHdmiCmd();
             }
         }
 

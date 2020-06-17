@@ -22,6 +22,7 @@ namespace EpsonProjectorEpi.Queries
 
         public override T Handle()
         {
+            Debug.Console(1, this, "Checking response: '{0}'", _response);
             return ResponseEnumeration<T, TResponse>.GetAll().FirstOrDefault(x => Regex.IsMatch(_response, x.ResponseString));
         }
     }

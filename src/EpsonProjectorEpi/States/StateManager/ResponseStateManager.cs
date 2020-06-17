@@ -20,6 +20,7 @@ namespace EpsonProjectorEpi.States
             : base(coms)
         {
             _key = key;
+            ResponseEnumeration<T, TResponse>.GetAll();
         }
 
         protected override void ProcessData(string data)

@@ -26,7 +26,9 @@ namespace EpsonProjectorEpi.States
 
         protected virtual void HandleLineReceived(object sender, GenericCommMethodReceiveTextArgs e)
         {
-            if (String.IsNullOrEmpty(e.Text)) return;
+            if (String.IsNullOrEmpty(e.Text)) 
+                return;
+
             ProcessData(e.Text);
         }
 
@@ -73,9 +75,11 @@ namespace EpsonProjectorEpi.States
                 return;
 
             State = state;
+            Debug.Console(1, this, "Received state update: '{0}'", state.ToString());
 
             var handler = StateUpdated;
-            if (handler == null) return;
+            if (handler == null) 
+                return;
 
             handler.Invoke(this, new StateUpdatedEventArgs<T> { CurrentState = state });
         }
