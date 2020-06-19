@@ -42,7 +42,10 @@ namespace EpsonProjectorEpi
                 Debug.Console(1, this, "Power set to {0}", _currentPower.Name);
 
                 if (_currentPower == ProjectorPower.PowerOn)
-                    CheckPowerAndSwitchInput(_currentInput);
+                {
+                    EnqueueCmd(_currentInput.Command);
+                    EnqueueCmd(_currentMute.Command);
+                }
 
                 if (_currentPower == ProjectorPower.PowerOff || _currentPower == ProjectorPower.Warming)
                     CurrentMute = ProjectorMute.MuteOff;
@@ -328,27 +331,28 @@ namespace EpsonProjectorEpi
 
         public void MuteOn()
         {
-            if (_currentPower != ProjectorPower.PowerOn || _currentMute == ProjectorMute.MuteOn)
+            if (_currentMute == ProjectorMute.MuteOn)
                 return;
 
-            EnqueueCmd(ProjectorMute.MuteOn.Command);
+            if (_currentPower == ProjectorPower.PowerOn)
+                EnqueueCmd(ProjectorMute.MuteOn.Command);
+
             CurrentMute = ProjectorMute.MuteOn;
         }
 
         public void MuteOff()
         {
-            if (_currentPower != ProjectorPower.PowerOn || _currentMute == ProjectorMute.MuteOff)
+            if (_currentMute == ProjectorMute.MuteOff)
                 return;
 
-            EnqueueCmd(ProjectorMute.MuteOff.Command);
+            if (_currentPower == ProjectorPower.PowerOn)
+                EnqueueCmd(ProjectorMute.MuteOff.Command);
+
             CurrentMute = ProjectorMute.MuteOff;
         }
 
         public void MuteToggle()
         {
-            if (_currentPower != ProjectorPower.PowerOn)
-                return;
-
             if (_currentMute == ProjectorMute.MuteOff)
                 MuteOn();
             else
