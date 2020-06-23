@@ -14,13 +14,11 @@ namespace EpsonProjectorEpi.States
     public abstract class BaseStateManager<T> : IStateManager<T>
     {
         public abstract string Key { get; }
-        readonly IBasicCommunication _coms;
         readonly CommunicationGather _gather;
 
-        public BaseStateManager(IBasicCommunication coms)
+        public BaseStateManager(CommunicationGather gather)
         {
-            _coms = coms;
-            _gather = new CommunicationGather(coms, "\x0D:");
+            _gather = gather;
             _gather.LineReceived += HandleLineReceived;
         }
 

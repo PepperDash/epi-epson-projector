@@ -47,8 +47,8 @@ namespace EpsonProjectorEpi
                     EnqueueCmd(_currentMute.Command);
                 }
 
-                if (_currentPower == ProjectorPower.PowerOff || _currentPower == ProjectorPower.Warming)
-                    CurrentMute = ProjectorMute.MuteOff;
+                /*if (_currentPower == ProjectorPower.PowerOff || _currentPower == ProjectorPower.Warming)
+                    CurrentMute = ProjectorMute.MuteOff;*/
 
                 UpdatePollForPowerState();
 
@@ -120,12 +120,13 @@ namespace EpsonProjectorEpi
 
             _coms = coms;
             _commandQueue = new CommandProcessor(_coms);
+            var gather = new CommunicationGather(_coms, "\x0D:");
 
-            _powerManager = new ResponseStateManager<PowerResponseEnum, ProjectorPower>(Key + "-PowerState", _coms);
-            _muteManager = new ResponseStateManager<MuteResponseEnum, ProjectorMute>(Key + "-MuteState", _coms);
-            _inputManager = new ResponseStateManager<InputResponseEnum, ProjectorInput>(Key + "-InputState", _coms);
-            _serialNumberManager = new SerialNumberStateManager(Key + "-SerialNumber", _coms);
-            _lampHoursManager = new LampHoursStateManager(Key + "-LampHours", _coms);
+            _powerManager = new ResponseStateManager<PowerResponseEnum, ProjectorPower>(Key + "-PowerState", gather);
+            _muteManager = new ResponseStateManager<MuteResponseEnum, ProjectorMute>(Key + "-MuteState", gather);
+            _inputManager = new ResponseStateManager<InputResponseEnum, ProjectorInput>(Key + "-InputState", gather);
+            _serialNumberManager = new SerialNumberStateManager(Key + "-SerialNumber", gather);
+            _lampHoursManager = new LampHoursStateManager(Key + "-LampHours", gather);
 
             WarmupTimer = new CTimer(delegate { }, Timeout.Infinite);
             CooldownTimer = new CTimer(delegate { }, Timeout.Infinite);
