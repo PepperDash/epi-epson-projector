@@ -29,6 +29,12 @@ namespace EpsonProjectorEpi.Enums
         private static IEnumerable<TEnum> _all;
         public static IEnumerable<TEnum> GetAll()
         {
+            CheckAll();
+            return _all;
+        }
+
+        static void CheckAll()
+        {
             _lock.Enter();
             try
             {
@@ -39,8 +45,6 @@ namespace EpsonProjectorEpi.Enums
             {
                 _lock.Leave();
             }
-
-            return _all;
         }
 
         public override bool Equals(object obj)
@@ -188,6 +192,7 @@ namespace EpsonProjectorEpi.Enums
             if (String.IsNullOrEmpty(name))
                 throw new ArgumentNullException(name);
 
+            CheckAll();
             if (ignoreCase)
             {
                 var result = _all.FirstOrDefault(x => x.Name.Equals(name));
@@ -208,6 +213,7 @@ namespace EpsonProjectorEpi.Enums
 
         public static bool TryFromValue(int value, out TEnum result)
         {
+            CheckAll();
             result = _all.FirstOrDefault(x => x.Value == value);
             if (result == null) return false;
 
@@ -216,6 +222,7 @@ namespace EpsonProjectorEpi.Enums
 
         public static TEnum FromValue(int value)
         {
+            CheckAll();
             var result = _all.FirstOrDefault(x => x.Value == value);
             if (result == null)
                 throw new ArgumentNullException(value.ToString());

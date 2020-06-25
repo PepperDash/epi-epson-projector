@@ -16,10 +16,11 @@ namespace EpsonProjectorEpi.States
     {
         private readonly string _key;
 
-        public ResponseStateManager(string key, IBasicCommunication coms)
-            : base(coms)
+        public ResponseStateManager(string key, CommunicationGather gather)
+            : base(gather)
         {
             _key = key;
+            ResponseEnumeration<T, TResponse>.GetAll();
         }
 
         protected override void ProcessData(string data)

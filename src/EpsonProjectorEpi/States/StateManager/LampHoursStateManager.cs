@@ -15,8 +15,8 @@ namespace EpsonProjectorEpi.States
     {
         private readonly string _key;
 
-        public LampHoursStateManager(string key, IBasicCommunication coms)
-            : base(coms)
+        public LampHoursStateManager(string key, CommunicationGather gather)
+            : base(gather)
         {
             _key = key;
         }

@@ -31,7 +31,7 @@ namespace EpsonProjectorEpi
 
         private ProjectorPower _currentPower = ProjectorPower.PowerOff;
         private ProjectorMute _currentMute = ProjectorMute.MuteOff;
-        private ProjectorInput _currentInput = ProjectorInput.Hdmi;
+        private ProjectorInput _currentInput = ProjectorInput.Dvi;
 
         public ProjectorPower CurrentPower 
         {
@@ -42,10 +42,13 @@ namespace EpsonProjectorEpi
                 Debug.Console(1, this, "Power set to {0}", _currentPower.Name);
 
                 if (_currentPower == ProjectorPower.PowerOn)
+                {
                     EnqueueCmd(_currentInput.Command);
+                    EnqueueCmd(_currentMute.Command);
+                }
 
-                if (_currentPower == ProjectorPower.PowerOff || _currentPower == ProjectorPower.Warming)
-                    CurrentMute = ProjectorMute.MuteOff;
+                /*if (_currentPower == ProjectorPower.PowerOff || _currentPower == ProjectorPower.Warming)
+                    CurrentMute = ProjectorMute.MuteOff;*/
 
                 UpdatePollForPowerState();
 
@@ -117,12 +120,16 @@ namespace EpsonProjectorEpi
 
             _coms = coms;
             _commandQueue = new CommandProcessor(_coms);
+            var gather = new CommunicationGather(_coms, "\x0D:");
 
-            _powerManager = new ResponseStateManager<PowerResponseEnum, ProjectorPower>(Key + "-PowerState", _coms);
-            _muteManager = new ResponseStateManager<MuteResponseEnum, ProjectorMute>(Key + "-MuteState", _coms);
-            _inputManager = new ResponseStateManager<InputResponseEnum, ProjectorInput>(Key + "-InputState", _coms);
-            _serialNumberManager = new SerialNumberStateManager(Key + "-SerialNumber", _coms);
-            _lampHoursManager = new LampHoursStateManager(Key + "-LampHours", _coms);
+            _powerManager = new ResponseStateManager<PowerResponseEnum, ProjectorPower>(Key + "-PowerState", gather);
+            _muteManager = new ResponseStateManager<MuteResponseEnum, ProjectorMute>(Key + "-MuteState", gather);
+            _inputManager = new ResponseStateManager<InputResponseEnum, ProjectorInput>(Key + "-InputState", gather);
+            _serialNumberManager = new SerialNumberStateManager(Key + "-SerialNumber", gather);
+            _lampHoursManager = new LampHoursStateManager(Key + "-LampHours", gather);
+
+            WarmupTimer = new CTimer(delegate { }, Timeout.Infinite);
+            CooldownTimer = new CTimer(delegate { }, Timeout.Infinite);
 
             _serialNumberManager.StateUpdated += (sender, args) =>
                 {
@@ -137,12 +144,12 @@ namespace EpsonProjectorEpi
                 };
 
             _powerManager.StateUpdated += (sender, args) =>
-            {
-                if (_currentPower == args.CurrentState)
-                    return;
+                {
+                    if (_currentPower == args.CurrentState)
+                        return;
 
-                CurrentPower = args.CurrentState;
-            };
+                    CurrentPower = args.CurrentState;
+                };
 
             _inputManager.StateUpdated += (sender, args) =>
                 {
@@ -166,7 +173,13 @@ namespace EpsonProjectorEpi
                         config.Monitor = new CommunicationMonitorConfig() { PollString = new PowerPollCmd().CmdString };
 
                     CommunicationMonitor = new GenericCommunicationMonitor(this, _coms, config.Monitor);
-                    CommunicationMonitor.StatusChange += (sender, args) => StatusFb.FireUpdate();
+                    CommunicationMonitor.StatusChange += (sender, args) =>
+                        {
+                            if (!CommunicationMonitor.IsOnline)
+                                CurrentPower = ProjectorPower.PowerOff;
+                            else
+                                UpdatePollForPowerState();
+                        };
                 });
 
             AddPostActivationAction(() => CurrentPower = ProjectorPower.PowerOff);
@@ -177,6 +190,7 @@ namespace EpsonProjectorEpi
                     {
                         _poll.Stop();
                         _poll.Dispose();
+                        CommunicationMonitor.Stop();
                     }
                 };
         }
@@ -210,15 +224,9 @@ namespace EpsonProjectorEpi
                 return;
             }
 
-            PowerOn();
-            MuteOff();
-
             ProjectorInput result;
             if (ProjectorInput.TryFromValue(input, out result))
-            {
-                _currentInput = result;
-                EnqueueCmd(result.Command);
-            }
+                ExecuteSwitch(result);
         }
 
         public void ExecuteSwitch(ProjectorInput input)
@@ -226,11 +234,7 @@ namespace EpsonProjectorEpi
             PowerOn();
             MuteOff();
 
-            _currentInput = input;
-            if (_currentPower != ProjectorPower.PowerOn)
-                return;
-
-            EnqueueCmd(input.Command);
+            CheckPowerAndSwitchInput(input);
         }
 
         public override void ExecuteSwitch(object inputSelector)
@@ -239,7 +243,23 @@ namespace EpsonProjectorEpi
             if (input == null) 
                 return;
 
-            ExecuteSwitchNumeric(input.Value);
+            PowerOn();
+            MuteOff();
+
+            CheckPowerAndSwitchInput(input);
+        }
+
+        private void CheckPowerAndSwitchInput(ProjectorInput input)
+        {
+            if (_currentPower == ProjectorPower.PowerOn)
+            {
+                EnqueueCmd(input.Command);
+                CurrentInput = input;
+            }
+            else
+            {
+                _currentInput = input;
+            } 
         }
 
         public void EnqueueCmd(IEpsonCmd cmd)
@@ -270,7 +290,7 @@ namespace EpsonProjectorEpi
 
         public override void PowerOff()
         {
-            if (_currentPower == ProjectorPower.PowerOff || _currentPower == ProjectorPower.Cooling)
+            if (_currentPower == ProjectorPower.PowerOff || _currentPower == ProjectorPower.Cooling || !CommunicationMonitor.IsOnline)
                 return;
 
             if (_currentPower == ProjectorPower.PowerOn)
@@ -280,33 +300,25 @@ namespace EpsonProjectorEpi
             }
             else
             {
-                _poll.Stop();
-                _poll = new CTimer(o =>
-                    {
-                        EnqueueCmd(new PowerOffCmd());
-                        CurrentPower = ProjectorPower.Cooling;
-                    }, WarmupTime);
+                CooldownTimer.Stop();
+                WarmupTimer = new CTimer(o => PowerOff(), WarmupTime);
             }
         }
 
         public override void PowerOn()
         {
-            if (_currentPower == ProjectorPower.PowerOn || _currentPower == ProjectorPower.Warming)
+            if (_currentPower == ProjectorPower.PowerOn || _currentPower == ProjectorPower.Warming || !CommunicationMonitor.IsOnline)
                 return;
 
             if (_currentPower == ProjectorPower.PowerOff)
             {
                 EnqueueCmd(new PowerOnCmd());
-                CurrentPower = ProjectorPower.Cooling;
+                CurrentPower = ProjectorPower.Warming;
             }
             else
             {
-                _poll.Stop();
-                _poll = new CTimer(o =>
-                    {
-                        EnqueueCmd(new PowerOnCmd());
-                        CurrentPower = ProjectorPower.Warming;
-                    }, CooldownTime);
+                WarmupTimer.Stop();
+                CooldownTimer = new CTimer(o => PowerOn(), CooldownTime);
             }
         }
 
@@ -320,25 +332,28 @@ namespace EpsonProjectorEpi
 
         public void MuteOn()
         {
-            if (_currentPower != ProjectorPower.PowerOn || _currentMute == ProjectorMute.MuteOn)
+            if (_currentMute == ProjectorMute.MuteOn)
                 return;
 
-            EnqueueCmd(ProjectorMute.MuteOn.Command);
+            if (_currentPower == ProjectorPower.PowerOn)
+                EnqueueCmd(ProjectorMute.MuteOn.Command);
+
+            CurrentMute = ProjectorMute.MuteOn;
         }
 
         public void MuteOff()
         {
-            if (_currentPower != ProjectorPower.PowerOn || _currentMute == ProjectorMute.MuteOff)
+            if (_currentMute == ProjectorMute.MuteOff)
                 return;
 
-            EnqueueCmd(ProjectorMute.MuteOff.Command);
+            if (_currentPower == ProjectorPower.PowerOn)
+                EnqueueCmd(ProjectorMute.MuteOff.Command);
+
+            CurrentMute = ProjectorMute.MuteOff;
         }
 
         public void MuteToggle()
         {
-            if (_currentPower != ProjectorPower.PowerOn)
-                return;
-
             if (_currentMute == ProjectorMute.MuteOff)
                 MuteOn();
             else
@@ -352,7 +367,18 @@ namespace EpsonProjectorEpi
                 _poll = new CTimer(o =>
                     {
                         EnqueueCmd(new PowerPollCmd());
-                    }, 0);
+                    }, 250);
+            }
+
+            if (!CommunicationMonitor.IsOnline)
+            {
+                _poll.Stop();
+                _poll = new CTimer(o =>
+                {
+                    EnqueueCmd(new PowerPollCmd());
+                }, null, 250, 20000);
+
+                return;
             }
 
             if (_currentPower == ProjectorPower.PowerOn)
@@ -362,6 +388,7 @@ namespace EpsonProjectorEpi
                     {
                         EnqueueCmd(new PowerPollCmd());
                         EnqueueCmd(new SourcePollCmd());
+                        EnqueueCmd(new MutePollCmd());
                         EnqueueCmd(new SerialNumberPollCmd());
                         EnqueueCmd(new LampPollCmd());
                     }, null, 250, 10000);
@@ -407,9 +434,18 @@ namespace EpsonProjectorEpi
 
         public void LinkToApi(Crestron.SimplSharpPro.DeviceSupport.BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
         {
-            var joinMap = new EpsonProjectorJoinMap(joinStart);
-            bridge.AddJoinMap(Key, joinMap);
+            Debug.Console(1, this, "Attempting to link {0} at {1}", trilist.ID, joinStart);
 
+            var joinMap = new EpsonProjectorJoinMap(joinStart);
+            if (bridge != null)
+            {
+                bridge.AddJoinMap(Key, joinMap);
+            }
+            else
+            {
+                Debug.Console(1, this, "Apparently you can't use an old bridge with a new join map");
+            }
+            
             new EpsonProjectorBridge().LinkToApi(this, trilist, joinMap);
         }
 
