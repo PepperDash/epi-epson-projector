@@ -8,22 +8,55 @@ using EpsonProjectorEpi.Enums;
 
 namespace EpsonProjectorEpi.Enums
 {
-    public class ProjectorInput : CmdEnumeration<ProjectorInput>
+    public abstract class ProjectorInput : Enumeration<ProjectorInput>
     {
-        private ProjectorInput(int value, string name, IEpsonCmd cmd, string response)
-            : base(value, name, cmd, response)
+        public IEpsonCmd Command { get; protected set; }
+
+        private ProjectorInput(int value, string name)
+            : base(value, name)
         {
-            
+ 
         }
 
-        static ProjectorInput()
+        public static readonly ProjectorInput Hdmi = new InputHdmiEnum();
+        public static readonly ProjectorInput Dvi = new InputDviEnum();
+        public static readonly ProjectorInput Computer = new InputComputerEnum();
+        public static readonly ProjectorInput Video = new InputVideoEnum();
+
+        private sealed class InputDviEnum : ProjectorInput
         {
-            SearchString = "SOURCE";
+            public InputDviEnum()
+                : base(1, "DVI")
+            {
+                Command = new SourceInputDviCmd();
+            }
         }
 
-        public static readonly ProjectorInput Hdmi = new ProjectorInput(1, "Hdmi", new SourceInputHdmiCmd(), "SOURCE=A0");
-        public static readonly ProjectorInput Dvi = new ProjectorInput(2, "Dvi", new SourceInputDviCmd(), "SOURCE=30");
-        public static readonly ProjectorInput Computer = new ProjectorInput(3, "Computer", new SourceInputComputerCmd(), "SOURCE=11");
-        public static readonly ProjectorInput Video = new ProjectorInput(4, "Video", new SourceInputVideoCmd(), "SOURCE=45");
+        private sealed class InputHdmiEnum : ProjectorInput
+        {
+            public InputHdmiEnum()
+                : base(2, "Hdmi")
+            {
+                Command = new SourceInputHdmiCmd();
+            }
+        }
+
+        private class InputComputerEnum : ProjectorInput
+        {
+            public InputComputerEnum()
+                : base(3, "Computer")
+            {
+                Command = new SourceInputComputerCmd();
+            }
+        }
+
+        private sealed class InputVideoEnum : ProjectorInput
+        {
+            public InputVideoEnum()
+                : base(4, "Video")
+            {
+                Command = new SourceInputVideoCmd();
+            }
+        }
     }
 }

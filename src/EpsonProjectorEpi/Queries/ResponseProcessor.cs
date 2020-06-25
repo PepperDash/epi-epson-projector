@@ -2,13 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using Crestron.SimplSharp;
 using PepperDash.Core;
 using EpsonProjectorEpi.Enums;
 
 namespace EpsonProjectorEpi.Queries
 {
-    public class ResponseProcessor<T> : BaseResponseProcessor where T : CmdEnumeration<T>
+    public class ResponseProcessor<T, TResponse> : BaseResponseProcessor<T> 
+        where T : ResponseEnumeration<T, TResponse>
     {
         readonly string _response;
 
@@ -18,12 +20,9 @@ namespace EpsonProjectorEpi.Queries
             _response = response;
         }
 
-        public T Handle()
+        public override T Handle()
         {
-            if (String.IsNullOrEmpty(_response) || !_response.Contains(CmdEnumeration<T>.SearchString))
-                return null;
-
-            return CmdEnumeration<T>.GetAll().FirstOrDefault(x => _response.Equals(x.Response));
+            return ResponseEnumeration<T, TResponse>.GetAll().FirstOrDefault(x => Regex.IsMatch(_response, x.ResponseString));
         }
     }
 }

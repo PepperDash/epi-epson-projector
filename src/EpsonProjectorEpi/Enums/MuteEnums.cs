@@ -7,20 +7,17 @@ using EpsonProjectorEpi.Commands;
 
 namespace EpsonProjectorEpi.Enums
 {
-    public class ProjectorMute : CmdEnumeration<ProjectorMute>
+    public class ProjectorMute : Enumeration<ProjectorMute>
     {
-        private ProjectorMute(int value, string name, IEpsonCmd cmd, string response)
-            : base (value, name, cmd, response)
+        public IEpsonCmd Command { get; protected set; }
+
+        private ProjectorMute(int value, string name)
+            : base (value, name)
         {
-            
+
         }
 
-        static ProjectorMute()
-        {
-            SearchString = "MUTE";
-        }
-
-        public static readonly ProjectorMute MuteOn = new ProjectorMute(1, "Mute On", new MuteOnCmd(), "MUTE=ON");
-        public static readonly ProjectorMute MuteOff = new ProjectorMute(0, "Mute Off", new MuteOffCmd(), "MUTE=OFF");
+        public static readonly ProjectorMute MuteOn = new ProjectorMute(1, "Mute On") { Command = new MuteOnCmd() };
+        public static readonly ProjectorMute MuteOff = new ProjectorMute(0, "Mute Off") { Command = new MuteOffCmd() };
     }
 }

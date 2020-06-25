@@ -10,33 +10,41 @@ using EpsonProjectorEpi.Extensions;
 using EpsonProjectorEpi.Commands;
 using EpsonProjectorEpi.Queries;
 using EpsonProjectorEpi.Config;
+using EpsonProjectorEpi.States;
+using EpsonProjectorEpi.Enums;
 
 namespace EpsonProjectorEpi
 {
-    public class DeviceFactory
+    public class DeviceFactory : EssentialsPluginDeviceFactory<EpsonProjector>
     {
-        public static void LoadPlugin()
+        public DeviceFactory()
         {
-            PepperDash.Essentials.Core.DeviceFactory.AddFactoryForType("epsonprojector", config =>
-                {
-                    var builder = new DeviceFactory();
-                    return builder.BuildDevice(config).BuildInputs();
-                });
+            MinimumEssentialsFrameworkVersion = "1.5.4";
+            TypeNames = new List<string>() { "epsonProjector" };
         }
 
-        public IKeyed BuildDevice(DeviceConfig config)
+        public override EssentialsDevice BuildDevice(DeviceConfig dc)
         {
-            var props = PropsConfig.FromDeviceConfig(config);
-            var coms = CommFactory.CreateCommForDevice(config);
-            var status = new StatusManager(config.Key + "-Status", coms);
-            var poll = new PollManager(coms, status);
+            var props = PropsConfig.FromDeviceConfig(dc);
+            var coms = CommFactory.CreateCommForDevice(dc);
+            var device = new EpsonProjector(dc.Key, dc.Name, props, coms);
 
-            var proj = new EpsonProjector(config.Key, config.Name, coms, poll, status);
+            foreach (var input in ProjectorInput.GetAll())
+            {
+                Debug.Console(0, device, "Adding Routing input - {0}", input.Name);
 
-            proj.CommunicationMonitor = new GenericCommunicationMonitor(proj, coms, props.Monitor);
-            proj.ScreenName = props.ScreenName;
+                var newInput = new RoutingInputPort(
+                        device.Key + "-" + input.Name,
+                        eRoutingSignalType.Video,
+                        eRoutingPortConnectionType.BackplaneOnly,
+                        input,
+                        device);
 
-            return proj;
+
+                device.InputPorts.Add(newInput);
+            }
+
+            return device;
         }
     }
 }

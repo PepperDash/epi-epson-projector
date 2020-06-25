@@ -8,9 +8,9 @@ using EpsonProjectorEpi.Extensions;
 
 namespace EpsonProjectorEpi.Queries
 {
-    public class SerialNumberResponseProcessor : BaseResponseProcessor
+    public class SerialNumberResponseProcessor : BaseResponseProcessor<string>
     {
-        readonly string _response;
+        private readonly string _response;
 
         public SerialNumberResponseProcessor(string key, string response)
             : base(key)
@@ -18,7 +18,7 @@ namespace EpsonProjectorEpi.Queries
             _response = response;
         }
 
-        public string Handle()
+        public override string Handle()
         {
             if (!_response.Contains("SNO"))
                 throw new ArgumentException("SNO");

@@ -49,70 +49,71 @@
     <Reference Include="mscorlib" />
     <Reference Include="PepperDashEssentials, Version=1.4.32.38764, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\submodule\essentials-builds\PepperDashEssentials.dll</HintPath>
+      <HintPath>..\..\essentials-builds\PepperDashEssentials.dll</HintPath>
     </Reference>
     <Reference Include="PepperDash_Core, Version=1.0.31.23583, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\submodule\essentials-builds\PepperDash_Core.dll</HintPath>
+      <HintPath>..\..\essentials-builds\PepperDash_Core.dll</HintPath>
     </Reference>
     <Reference Include="PepperDash_Essentials_Core, Version=1.4.32.38755, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\submodule\essentials-builds\PepperDash_Essentials_Core.dll</HintPath>
+      <HintPath>..\..\essentials-builds\PepperDash_Essentials_Core.dll</HintPath>
     </Reference>
     <Reference Include="SimplSharpCustomAttributesInterface, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpCustomAttributesInterface.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpCustomAttributesInterface.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="SimplSharpHelperInterface, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpHelperInterface.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpHelperInterface.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="SimplSharpNewtonsoft, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpNewtonsoft.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpNewtonsoft.dll</HintPath>
     </Reference>
     <Reference Include="SimplSharpPro, Version=1.5.3.17, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpPro.exe</HintPath>
+      <HintPath>..\..\..\..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpPro.exe</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="SimplSharpReflectionInterface, Version=1.0.5583.25238, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpReflectionInterface.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpReflectionInterface.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Commands\CmdProcessor.cs" />
     <Compile Include="Commands\CustomCmd.cs" />
     <Compile Include="Commands\InputCmds.cs" />
-    <Compile Include="Commands\IPollManager.cs" />
     <Compile Include="Commands\MuteCmds.cs" />
     <Compile Include="Commands\Polls.cs" />
     <Compile Include="Commands\PowerCmds.cs" />
     <Compile Include="Config\PropsConfig.cs" />
     <Compile Include="DeviceFactory.cs" />
-    <Compile Include="Commands\CmdHandler.cs" />
-    <Compile Include="Enums\CmdEnumeration.cs" />
+    <Compile Include="Commands\CommandHandler.cs" />
+    <Compile Include="Enums\ResponseEnumeration.cs" />
     <Compile Include="Enums\MuteEnums.cs" />
     <Compile Include="Enums\PowerEnums.cs" />
     <Compile Include="Enums\Enumeration.cs" />
     <Compile Include="Enums\InputEnums.cs" />
     <Compile Include="EpsonProjector.cs" />
-    <Compile Include="Commands\PollManager.cs" />
     <Compile Include="EpsonProjectorBridge.cs" />
-    <Compile Include="Extensions\TrimResponseForValue.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Extensions\InputBuilder.cs" />
     <Compile Include="Queries\BaseResponseProcessor.cs" />
     <Compile Include="Queries\SerialNumberResponseProcessor.cs" />
-    <Compile Include="Queries\IStatusManager.cs" />
+    <Compile Include="States\StateManager\ResponseStateManager.cs" />
+    <Compile Include="States\IStateManager.cs" />
     <Compile Include="Queries\LampResponseProcessor.cs" />
     <Compile Include="Queries\ResponseProcessor.cs" />
-    <Compile Include="Queries\StatusManager.cs" />
+    <Compile Include="States\StateManager\BaseStateManager.cs" />
+    <Compile Include="States\StateManager\LampHoursStateManager.cs" />
+    <Compile Include="States\StateManager\SerialNumberStateManager.cs" />
+    <Compile Include="Extensions\TrimResponseForValue.cs" />
     <None Include="Properties\ControlSystem.cfg" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.targets" />

@@ -7,24 +7,56 @@ using EpsonProjectorEpi.Commands;
 
 namespace EpsonProjectorEpi.Enums
 {
-    public class ProjectorPower : CmdEnumeration<ProjectorPower>
+    public abstract class ProjectorPower : Enumeration<ProjectorPower>
     {
-        private ProjectorPower(int value, string name, IEpsonCmd cmd, string response)
-            : base (value, name, cmd, response)
+        public IEpsonCmd Command { get; protected set; }
+
+        private ProjectorPower(int value, string name)
+            : base (value, name)
         {
             
         }
 
-        static ProjectorPower()
+        public static readonly ProjectorPower PowerOff = new PowerOffEnum() { Command = new PowerOffCmd() };
+        public static readonly ProjectorPower PowerOn = new PowerOnEnum() { Command = new PowerOnCmd() };
+        public static readonly ProjectorPower Warming = new PowerWarmingEnum() { Command = CustomCmd.Empty };
+        public static readonly ProjectorPower Cooling = new PowerCoolingEnum() { Command = CustomCmd.Empty };
+        
+        private sealed class PowerOffEnum : ProjectorPower
         {
-            SearchString = "PWR";
+            public PowerOffEnum()
+                : base(0, "Power Off")
+            {
+                Command = new PowerOffCmd();
+            }
         }
 
-        public static readonly ProjectorPower PowerOff = new ProjectorPower(0, "Power Off", new PowerOffCmd(), "PWR=00");
-        public static readonly ProjectorPower PowerOn = new ProjectorPower(1, "Power On", new PowerOnCmd(), "PWR=01");
-        public static readonly ProjectorPower Warming = new ProjectorPower(2, "Warming", null, "PWR=02");
-        public static readonly ProjectorPower Cooling = new ProjectorPower(3, "Cooling", null, "PWR=03");
-        public static readonly ProjectorPower Standby = new ProjectorPower(4, "Standby", null, "PWR=04");
-        public static readonly ProjectorPower AbnormalityStandby = new ProjectorPower(5, "Abnormality Standby", null, "PWR=05");
+        private sealed class PowerOnEnum : ProjectorPower
+        {
+            public PowerOnEnum()
+                : base(1, "Power On")
+            {
+                Command = new PowerOnCmd();
+            }
+        }
+
+        private sealed class PowerWarmingEnum : ProjectorPower
+        {
+            public PowerWarmingEnum()
+                : base(2, "Warming")
+            {
+                Command = CustomCmd.Empty;
+            }
+        }
+
+        private sealed class PowerCoolingEnum : ProjectorPower
+        {
+            public PowerCoolingEnum()
+                : base(3, "Cooling")
+            {
+                Command = CustomCmd.Empty;
+            }
+
+        }
     }
 }

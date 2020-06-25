@@ -5,198 +5,448 @@ using Crestron.SimplSharp;                          				// For Basic SIMPL# Clas
 using Crestron.SimplSharpPro;                       				// For Basic SIMPL#Pro classes
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
+using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Essentials.Core.Routing;
 using PepperDash.Essentials.Core.Monitoring;
-using PepperDash.Essentials.Bridges;
+using PepperDash.Essentials.Core.Config;
+using EpsonProjectorEpi.Config;
 using EpsonProjectorEpi.Commands;
 using EpsonProjectorEpi.Enums;
 using EpsonProjectorEpi.Queries;
+using EpsonProjectorEpi.States;
 
 namespace EpsonProjectorEpi
 {
-    public class EpsonProjector : TwoWayDisplayBase, ICommunicationMonitor, IBridge
+    public class EpsonProjector : TwoWayDisplayBase, IBridgeAdvanced
     {
-        readonly IBasicCommunication _coms;
-        readonly IPollManager _poll;
-        readonly IStatusManager _status;
+        private readonly IBasicCommunication _coms;
+        private readonly CommandProcessor _commandQueue;
+        private CTimer _poll;
 
-        public IBasicCommunication Coms { get { return _coms; } }
-        public StatusMonitorBase CommunicationMonitor { get; set; }
+        private readonly IStateManager<ProjectorPower> _powerManager;
+        private readonly IStateManager<ProjectorMute> _muteManager;
+        private readonly IStateManager<ProjectorInput> _inputManager;
+        private readonly IStateManager<string> _serialNumberManager;
+        private readonly IStateManager<int> _lampHoursManager;
+
+        private ProjectorPower _currentPower = ProjectorPower.PowerOff;
+        private ProjectorMute _currentMute = ProjectorMute.MuteOff;
+        private ProjectorInput _currentInput = ProjectorInput.Dvi;
+
+        public ProjectorPower CurrentPower 
+        {
+            get { return _currentPower; }
+            private set
+            {
+                _currentPower = value;
+                Debug.Console(1, this, "Power set to {0}", _currentPower.Name);
+
+                if (_currentPower == ProjectorPower.PowerOn)
+                {
+                    EnqueueCmd(_currentInput.Command);
+                    EnqueueCmd(_currentMute.Command);
+                }
+
+                /*if (_currentPower == ProjectorPower.PowerOff || _currentPower == ProjectorPower.Warming)
+                    CurrentMute = ProjectorMute.MuteOff;*/
+
+                UpdatePollForPowerState();
+
+                PowerIsOnFeedback.FireUpdate();
+                IsCoolingDownFeedback.FireUpdate();
+                IsWarmingUpFeedback.FireUpdate();
+                CurrentInputFeedback.FireUpdate();
+                CurrentInputValueFeedback.FireUpdate();
+                MuteIsOnFb.FireUpdate();
+                MuteIsOffFb.FireUpdate();
+            }
+        }
+
+        public ProjectorInput CurrentInput 
+        { 
+            get { return _currentInput; }
+            private set
+            {
+                _currentInput = value;
+                Debug.Console(1, this, "Input set to {0}", _currentInput.Name);
+
+                CurrentInputFeedback.FireUpdate();
+                CurrentInputValueFeedback.FireUpdate();
+            }
+        }
+
+        public ProjectorMute CurrentMute 
+        { 
+            get { return _currentMute; }
+            set
+            {
+                _currentMute = value;
+                Debug.Console(1, this, "Mute set to {0}", _currentMute.Name);
+
+                MuteIsOnFb.FireUpdate();
+                MuteIsOffFb.FireUpdate();
+            }
+        }
+
+        private string _serialNumber = string.Empty;
+        public string SerialNumber
+        {
+            get { return _serialNumber; }
+        }
+
+        private int _lampHours;
+        public int LampHours
+        {
+            get { return _lampHours; }
+        }
+
+        public StatusMonitorBase CommunicationMonitor { get; private set; }
 
         public StringFeedback StatusFb { get; private set; }
         public StringFeedback SerialNumberFb { get; private set; }
         public IntFeedback LampHoursFb { get; private set; }
         public BoolFeedback MuteIsOnFb { get; private set; }
-        public IntFeedback CurrentInputValueFb { get; set; }
+        public BoolFeedback MuteIsOffFb { get; private set; }
+        public IntFeedback CurrentInputValueFeedback { get; set; }
 
-        public string ScreenName { get; set; }
+        public string ScreenName { get; private set; }
 
-        public EpsonProjector(
-            string key, 
-            string name, 
-            IBasicCommunication coms, 
-            IPollManager poll,
-            IStatusManager status)
+        public EpsonProjector(string key, string name, PropsConfig config, IBasicCommunication coms)
             : base(key, name)
         {
-            _coms = coms;
-            _poll = poll;
-            _status = status;
+            ScreenName = config.ScreenName;
+            WarmupTime = 10000;
+            CooldownTime = 10000;
 
-            AddPostActivationAction(StartPolls);
-            AddPostActivationAction(StartCommunicationMonitor);
-            AddPostActivationAction(HandleStatusUpdated);
-            AddPostActivationAction(UpdateAllFeedbacks);
+            _coms = coms;
+            _commandQueue = new CommandProcessor(_coms);
+            var gather = new CommunicationGather(_coms, "\x0D:");
+
+            _powerManager = new ResponseStateManager<PowerResponseEnum, ProjectorPower>(Key + "-PowerState", gather);
+            _muteManager = new ResponseStateManager<MuteResponseEnum, ProjectorMute>(Key + "-MuteState", gather);
+            _inputManager = new ResponseStateManager<InputResponseEnum, ProjectorInput>(Key + "-InputState", gather);
+            _serialNumberManager = new SerialNumberStateManager(Key + "-SerialNumber", gather);
+            _lampHoursManager = new LampHoursStateManager(Key + "-LampHours", gather);
+
+            WarmupTimer = new CTimer(delegate { }, Timeout.Infinite);
+            CooldownTimer = new CTimer(delegate { }, Timeout.Infinite);
+
+            _serialNumberManager.StateUpdated += (sender, args) =>
+                {
+                    _serialNumber = args.CurrentState;
+                    SerialNumberFb.FireUpdate();
+                };
+
+            _lampHoursManager.StateUpdated += (sender, args) =>
+                {
+                    _lampHours = args.CurrentState;
+                    LampHoursFb.FireUpdate();
+                };
+
+            _powerManager.StateUpdated += (sender, args) =>
+                {
+                    if (_currentPower == args.CurrentState)
+                        return;
+
+                    CurrentPower = args.CurrentState;
+                };
+
+            _inputManager.StateUpdated += (sender, args) =>
+                {
+                    if (_currentInput == args.CurrentState)
+                        return;
+
+                    CurrentInput = args.CurrentState;
+                };
+
+            _muteManager.StateUpdated += (sender, args) =>
+                {
+                    if (_currentMute == args.CurrentState)
+                        return;
+
+                    CurrentMute = args.CurrentState;
+                };
+
+            AddPreActivationAction(() =>
+                {
+                    if (config.Monitor == null)
+                        config.Monitor = new CommunicationMonitorConfig() { PollString = new PowerPollCmd().CmdString };
+
+                    CommunicationMonitor = new GenericCommunicationMonitor(this, _coms, config.Monitor);
+                    CommunicationMonitor.StatusChange += (sender, args) =>
+                        {
+                            if (!CommunicationMonitor.IsOnline)
+                                CurrentPower = ProjectorPower.PowerOff;
+                            else
+                                UpdatePollForPowerState();
+                        };
+                });
+
+            AddPostActivationAction(() => CurrentPower = ProjectorPower.PowerOff);
+
+            CrestronEnvironment.ProgramStatusEventHandler += (args) =>
+                {
+                    if (args == eProgramStatusEventType.Stopping)
+                    {
+                        _poll.Stop();
+                        _poll.Dispose();
+                        CommunicationMonitor.Stop();
+                    }
+                };
         }
 
         public override bool CustomActivate()
-        {    
-            SerialNumberFb = new StringFeedback(() => _status.SerialNumber);
-            LampHoursFb = new IntFeedback(() => _status.LampHours);
-            MuteIsOnFb = new BoolFeedback(() => _status.MuteStatus == ProjectorMute.MuteOn && _status.PowerStatus == ProjectorPower.PowerOn);
-            StatusFb = new StringFeedback(() => CommunicationMonitor.Status.ToString());
-            CurrentInputValueFb = new IntFeedback(() => _status.InputStatus.Value);
+        {
+            Debug.Console(1, this, "Good morning, Dave...");
+            base.CustomActivate();
 
-            _coms.Connect();
+            BuildFeedbacks();
+            CommunicationMonitor.Start();
+
             return true;
         }
 
-        void StartCommunicationMonitor()
+        private void BuildFeedbacks()
         {
-            CommunicationMonitor.Start();
-            CommunicationMonitor.StatusChange += (sender, args) => StatusFb.FireUpdate();
-            StatusFb.FireUpdate();
+            SerialNumberFb = new StringFeedback(() => SerialNumber);
+            LampHoursFb = new IntFeedback(() => LampHours);
+            MuteIsOnFb = new BoolFeedback(() => _currentMute == ProjectorMute.MuteOn);
+            MuteIsOffFb = new BoolFeedback(() => !MuteIsOnFb.BoolValue);
+            StatusFb = new StringFeedback(() => CommunicationMonitor.Status.ToString());
+            CurrentInputValueFeedback = new IntFeedback(() => CurrentPower == ProjectorPower.PowerOn ? _currentInput.Value : 0);
         }
 
-        void StartPolls()
+        public void ExecuteSwitchNumeric(int input)
         {
-            _poll.Start();
-        }
+            if (input == 0)
+            {
+                MuteOn();
+                return;
+            }
 
-        void HandleStatusUpdated()
-        {
-            if (_status.PowerStatus != ProjectorPower.PowerOn)
-                _status.MuteStatus = ProjectorMute.MuteOff;
-
-            _status.StatusUpdated += (sender, args) => UpdateAllFeedbacks();
-        }
-
-        void UpdateAllFeedbacks()
-        {
-            PowerIsOnFeedback.FireUpdate();
-            IsCoolingDownFeedback.FireUpdate();
-            IsWarmingUpFeedback.FireUpdate();
-            CurrentInputValueFb.FireUpdate();
-            CurrentInputFeedback.FireUpdate();
-            SerialNumberFb.FireUpdate();
-            LampHoursFb.FireUpdate();
-            MuteIsOnFb.FireUpdate();
+            ProjectorInput result;
+            if (ProjectorInput.TryFromValue(input, out result))
+                ExecuteSwitch(result);
         }
 
         public void ExecuteSwitch(ProjectorInput input)
         {
-            var cmd = input.Cmd;
+            PowerOn();
+            MuteOff();
 
-            new CmdHandler(_coms, cmd).Handle();
-            _poll.Start();
-        }
-
-        public void ExecuteSwitch(int input)
-        {
-            ProjectorInput result;
-            if (!ProjectorInput.TryFromValue(input, out result)) return;
-
-            new CmdHandler(_coms, result.Cmd).Handle();
-            _poll.Start();
+            CheckPowerAndSwitchInput(input);
         }
 
         public override void ExecuteSwitch(object inputSelector)
         {
-            var cmd = inputSelector as IEpsonCmd;
-            if (cmd == null) return;
+            var input = inputSelector as ProjectorInput;
+            if (input == null) 
+                return;
 
-            new CmdHandler(_coms, cmd).Handle();
-            _poll.Start();
+            PowerOn();
+            MuteOff();
+
+            CheckPowerAndSwitchInput(input);
+        }
+
+        private void CheckPowerAndSwitchInput(ProjectorInput input)
+        {
+            if (_currentPower == ProjectorPower.PowerOn)
+            {
+                EnqueueCmd(input.Command);
+                CurrentInput = input;
+            }
+            else
+            {
+                _currentInput = input;
+            } 
+        }
+
+        public void EnqueueCmd(IEpsonCmd cmd)
+        {
+            _commandQueue.EnqueueCmd(cmd);
         }
 
         protected override Func<string> CurrentInputFeedbackFunc
         {
-            get { return () => _status.InputStatus.Name; }
+            get { return () => _currentPower == ProjectorPower.PowerOn ? 
+                _currentInput.Name : "None"; }
         }
 
         protected override Func<bool> IsCoolingDownFeedbackFunc
         {
-            get { return () => _status.PowerStatus == ProjectorPower.Cooling; }
+            get { return () => _currentPower == ProjectorPower.Cooling; }
         }
 
         protected override Func<bool> IsWarmingUpFeedbackFunc
         {
-            get { return () => _status.PowerStatus == ProjectorPower.Warming; }
+            get { return () => _currentPower == ProjectorPower.Warming; }
         }
 
         protected override Func<bool> PowerIsOnFeedbackFunc
         {
-            get { return () => _status.PowerStatus == ProjectorPower.PowerOn || _status.PowerStatus == ProjectorPower.Warming; }
+            get { return () => _currentPower == ProjectorPower.Warming || _currentPower == ProjectorPower.PowerOn; }
         }
 
         public override void PowerOff()
         {
-            IEpsonCmd cmd = new PowerOffCmd();
-            var result = new CmdHandler(_coms, cmd).Handle();
+            if (_currentPower == ProjectorPower.PowerOff || _currentPower == ProjectorPower.Cooling || !CommunicationMonitor.IsOnline)
+                return;
 
-            if (result) _status.PowerStatus = ProjectorPower.Cooling;
-            UpdateAllFeedbacks();
+            if (_currentPower == ProjectorPower.PowerOn)
+            {
+                EnqueueCmd(new PowerOffCmd());
+                CurrentPower = ProjectorPower.Cooling;
+            }
+            else
+            {
+                CooldownTimer.Stop();
+                WarmupTimer = new CTimer(o => PowerOff(), WarmupTime);
+            }
         }
 
         public override void PowerOn()
         {
-            IEpsonCmd cmd = new PowerOnCmd();
-            var result = new CmdHandler(_coms, cmd).Handle();
+            if (_currentPower == ProjectorPower.PowerOn || _currentPower == ProjectorPower.Warming || !CommunicationMonitor.IsOnline)
+                return;
 
-            if (result) _status.PowerStatus = ProjectorPower.Warming;
-            UpdateAllFeedbacks();
+            if (_currentPower == ProjectorPower.PowerOff)
+            {
+                EnqueueCmd(new PowerOnCmd());
+                CurrentPower = ProjectorPower.Warming;
+            }
+            else
+            {
+                WarmupTimer.Stop();
+                CooldownTimer = new CTimer(o => PowerOn(), CooldownTime);
+            }
         }
 
         public override void PowerToggle()
         {
-            throw new NotImplementedException();
+            if (_currentPower == ProjectorPower.PowerOn || _currentPower == ProjectorPower.Warming)
+                PowerOff();
+            else
+                PowerOn();
         }
 
         public void MuteOn()
         {
-            if (!PowerIsOnFeedbackFunc.Invoke()) return;
+            if (_currentMute == ProjectorMute.MuteOn)
+                return;
 
-            IEpsonCmd cmd = new MuteOnCmd();
-            var result = new CmdHandler(_coms, cmd).Handle();
+            if (_currentPower == ProjectorPower.PowerOn)
+                EnqueueCmd(ProjectorMute.MuteOn.Command);
 
-            if (result) _status.MuteStatus = ProjectorMute.MuteOn;
-            UpdateAllFeedbacks();
+            CurrentMute = ProjectorMute.MuteOn;
         }
 
         public void MuteOff()
         {
-            if (!PowerIsOnFeedbackFunc.Invoke()) return;
+            if (_currentMute == ProjectorMute.MuteOff)
+                return;
 
-            IEpsonCmd cmd = new MuteOffCmd();
-            var result = new CmdHandler(_coms, cmd).Handle();
+            if (_currentPower == ProjectorPower.PowerOn)
+                EnqueueCmd(ProjectorMute.MuteOff.Command);
 
-            if (result) _status.MuteStatus = ProjectorMute.MuteOff;
-            UpdateAllFeedbacks();
+            CurrentMute = ProjectorMute.MuteOff;
         }
 
         public void MuteToggle()
         {
-            if (!PowerIsOnFeedbackFunc.Invoke()) return;
-
-            if (_status.MuteStatus == ProjectorMute.MuteOff) MuteOn();
-            else MuteOff();
+            if (_currentMute == ProjectorMute.MuteOff)
+                MuteOn();
+            else
+                MuteOff();
         }
 
-        #region IBridge Members
-
-        public void LinkToApi(Crestron.SimplSharpPro.DeviceSupport.BasicTriList trilist, uint joinStart, string joinMapKey)
+        private void UpdatePollForPowerState()
         {
-            this.LinkToApiExt(trilist, joinStart, joinMapKey);
+            if (_poll == null)
+            {
+                _poll = new CTimer(o =>
+                    {
+                        EnqueueCmd(new PowerPollCmd());
+                    }, 250);
+            }
+
+            if (!CommunicationMonitor.IsOnline)
+            {
+                _poll.Stop();
+                _poll = new CTimer(o =>
+                {
+                    EnqueueCmd(new PowerPollCmd());
+                }, null, 250, 20000);
+
+                return;
+            }
+
+            if (_currentPower == ProjectorPower.PowerOn)
+            {
+                _poll.Stop();
+                _poll = new CTimer(o =>
+                    {
+                        EnqueueCmd(new PowerPollCmd());
+                        EnqueueCmd(new SourcePollCmd());
+                        EnqueueCmd(new MutePollCmd());
+                        EnqueueCmd(new SerialNumberPollCmd());
+                        EnqueueCmd(new LampPollCmd());
+                    }, null, 250, 10000);
+
+                return;
+            }
+
+            if (_currentPower == ProjectorPower.PowerOff)
+            {
+                _poll.Stop();
+                _poll = new CTimer(o =>
+                    {
+                        EnqueueCmd(new PowerPollCmd());
+                    }, null, 250, 10000);
+
+                return;
+            }
+
+            if (_currentPower == ProjectorPower.Warming)
+            {
+                _poll.Stop();
+                _poll = new CTimer(o =>
+                {
+                    EnqueueCmd(new PowerPollCmd());
+                }, null, WarmupTime, 1000);
+
+                return;
+            }
+
+            if (_currentPower == ProjectorPower.Cooling)
+            {
+                _poll.Stop();
+                _poll = new CTimer(o =>
+                {
+                    EnqueueCmd(new PowerPollCmd());
+                }, null, CooldownTime, 1000);
+
+                return;
+            }
+        }
+
+        #region IBridgeAdvanced Members
+
+        public void LinkToApi(Crestron.SimplSharpPro.DeviceSupport.BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
+        {
+            Debug.Console(1, this, "Attempting to link {0} at {1}", trilist.ID, joinStart);
+
+            var joinMap = new EpsonProjectorJoinMap(joinStart);
+            if (bridge != null)
+            {
+                bridge.AddJoinMap(Key, joinMap);
+            }
+            else
+            {
+                Debug.Console(1, this, "Apparently you can't use an old bridge with a new join map");
+            }
+            
+            new EpsonProjectorBridge().LinkToApi(this, trilist, joinMap);
         }
 
         #endregion

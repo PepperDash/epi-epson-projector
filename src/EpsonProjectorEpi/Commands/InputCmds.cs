@@ -13,7 +13,7 @@ namespace EpsonProjectorEpi.Commands
 
         public string CmdString
         {
-            get { return "SOURCE A0"; }
+            get { return "SOURCE 11"; }
         }
 
         #endregion
@@ -37,7 +37,7 @@ namespace EpsonProjectorEpi.Commands
 
         public string CmdString
         {
-            get { return "SOURCE 11"; }
+            get { return "SOURCE A0"; }
         }
 
         #endregion
