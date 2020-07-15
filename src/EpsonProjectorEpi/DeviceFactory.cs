@@ -19,7 +19,7 @@ namespace EpsonProjectorEpi
     {
         public DeviceFactory()
         {
-            MinimumEssentialsFrameworkVersion = "1.5.4";
+            MinimumEssentialsFrameworkVersion = "1.5.7";
             TypeNames = new List<string>() { "epsonProjector" };
         }
 
