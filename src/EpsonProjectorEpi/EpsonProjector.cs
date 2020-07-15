@@ -17,7 +17,7 @@ using EpsonProjectorEpi.States;
 
 namespace EpsonProjectorEpi
 {
-    public class EpsonProjector : TwoWayDisplayBase, IBridgeAdvanced
+    public class EpsonProjector : TwoWayDisplayBase, IBridgeAdvanced, IBasicVideoMuteWithFeedback
     {
         private readonly IBasicCommunication _coms;
         private readonly CommandProcessor _commandQueue;
@@ -447,6 +447,34 @@ namespace EpsonProjectorEpi
             }
             
             new EpsonProjectorBridge().LinkToApi(this, trilist, joinMap);
+        }
+
+        #endregion
+
+        #region IBasicVideoMuteWithFeedback Members
+
+        public BoolFeedback VideoMuteIsOn
+        {
+            get { return MuteIsOffFb; }
+        }
+
+        public void VideoMuteOff()
+        {
+            MuteOff();
+        }
+
+        public void VideoMuteOn()
+        {
+            MuteOn();
+        }
+
+        #endregion
+
+        #region IBasicVideoMute Members
+
+        public void VideoMuteToggle()
+        {
+            MuteToggle();
         }
 
         #endregion
