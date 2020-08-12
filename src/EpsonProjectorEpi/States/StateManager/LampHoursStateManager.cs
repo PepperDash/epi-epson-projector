@@ -27,6 +27,9 @@ namespace EpsonProjectorEpi.States
                 return;
 
             var result = new LampResponseProcessor(Key, data).Handle();
+            if (result == 0)
+                return;
+
             OnStateUpdated(result);
         }
 
