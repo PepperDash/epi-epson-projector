@@ -3,7 +3,7 @@ name: Main Build using Docker
 on:
   release:
     types:
-      - pusblished
+      - published
     branches:
       - main
 env:
