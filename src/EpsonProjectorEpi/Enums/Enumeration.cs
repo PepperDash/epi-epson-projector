@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using PepperDash.Core;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.Reflection;
@@ -158,7 +157,7 @@ namespace EpsonProjectorEpi.Enums
                 List<TEnum> options = new List<TEnum>();
                 foreach (var enumType in enumTypes)
                 {
-                    Debug.Console(0, "Found enum type: {0}", enumType.Name);
+                    Debug.Console(2, "Found enum type: {0}", enumType.Name);
                     var fields = enumType.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.DeclaredOnly)
                         .Select(x => x.GetValue(null))
                         .Cast<TEnum>();
@@ -168,7 +167,7 @@ namespace EpsonProjectorEpi.Enums
                         if (field == null)
                             continue;
 
-                        Debug.Console(0, "Adding field to this enum:{0} - {1}", field.Name, enumType.Name);
+                        Debug.Console(2, "Adding field to this enum:{0} - {1}", field.Name, enumType.Name);
                         if (options.Contains(field))
                             throw new Exception("This enum already exists");
 
