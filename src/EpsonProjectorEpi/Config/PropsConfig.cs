@@ -14,5 +14,7 @@ namespace EpsonProjectorEpi.Config
         public EssentialsControlPropertiesConfig Control { get; set; }
         public CommunicationMonitorConfig Monitor { get; set; }
         public string ScreenName { get; set; }
+        public uint WarmupTime { get; set; }
+        public uint CooldownTime { get; set; }
     }
 }
