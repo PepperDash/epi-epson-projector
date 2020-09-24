@@ -21,6 +21,7 @@ namespace EpsonProjectorEpi.States
             if (!data.Contains(ResponseEnumeration<T, TResponse>.SearchString))
                 return;
 
+            Debug.Console(2, this, "Processing Response:{0}", data);
             var result = new ResponseProcessor<T, TResponse>(Key, data).Handle();
 
             if (result == null)

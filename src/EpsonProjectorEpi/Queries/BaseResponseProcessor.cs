@@ -16,7 +16,7 @@ namespace EpsonProjectorEpi.Queries
 
         #endregion
 
-        public BaseResponseProcessor(string key)
+        protected BaseResponseProcessor(string key)
         {
             _key = key;
         }
@@ -27,7 +27,7 @@ namespace EpsonProjectorEpi.Queries
         {
             if (!str.Contains("=")) return str;
 
-            var index = str.IndexOf("=") + 1;
+            var index = str.IndexOf("=", StringComparison.Ordinal) + 1;
             return str.Remove(0, index).TrimEnd('\x0D');
         }
 
@@ -35,7 +35,7 @@ namespace EpsonProjectorEpi.Queries
         {
             if (!str.Contains("=")) return 0;
 
-            var index = str.IndexOf("=") + 1;
+            var index = str.IndexOf("=", StringComparison.Ordinal) + 1;
             return Convert.ToInt32(str.Remove(0, index));
         }
     }

@@ -62,9 +62,6 @@ namespace EpsonProjectorEpi.States
 
         protected virtual void OnStateUpdated(T state)
         {
-            if (state.Equals(State))
-                return;
-
             State = state;
             Debug.Console(1, this, "Received state update: '{0}'", state.ToString());
 
