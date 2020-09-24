@@ -102,8 +102,8 @@ namespace EpsonProjectorEpi
             : base(key, name)
         {
             ScreenName = config.ScreenName;
-            WarmupTime = 10000;
-            CooldownTime = 10000;
+            WarmupTime = config.WarmupTime == default(int) ? 10000 : config.WarmupTime;
+            CooldownTime = config.CooldownTime == default(int) ? 10000 : config.CooldownTime;
 
             _coms = coms;
             _commandQueue = new CommandProcessor(_coms);
@@ -286,6 +286,7 @@ namespace EpsonProjectorEpi
             else
             {
                 CooldownTimer.Stop();
+                Debug.Console(1, this, "Starting warmup timer to catch up... {0}", WarmupTime / 1000);
                 WarmupTimer = new CTimer(o => PowerOff(), WarmupTime);
             }
         }
@@ -303,6 +304,7 @@ namespace EpsonProjectorEpi
             else
             {
                 WarmupTimer.Stop();
+                Debug.Console(1, this, "Starting cooldown timer to catch up... {0}", CooldownTime / 1000);
                 CooldownTimer = new CTimer(o => PowerOn(), CooldownTime);
             }
         }
