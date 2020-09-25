@@ -1,4 +1,5 @@
-﻿using PepperDash.Essentials.Core;
+﻿using System.Collections.Generic;
+using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
 using Newtonsoft.Json;
 
@@ -16,5 +17,6 @@ namespace EpsonProjectorEpi.Config
         public string ScreenName { get; set; }
         public uint WarmupTime { get; set; }
         public uint CooldownTime { get; set; }
+        public Dictionary<string, int> Inputs { get; set; }
     }
 }

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Crestron.SimplSharp;                          
 using EpsonProjectorEpi.Commands;
 using EpsonProjectorEpi.Config;
@@ -12,6 +14,10 @@ namespace EpsonProjectorEpi
 {
     public class EpsonProjector : TwoWayDisplayBase, IBridgeAdvanced, IBasicVideoMuteWithFeedback
     {
+        public const int ProjectorMuteOn = 101;
+        public const int ProjectorMuteOff = 102;
+        public const int ProjectorMuteToggle = 103;
+
         private readonly IBasicCommunication _coms;
         private readonly CommandProcessor _commandQueue;
         private CTimer _poll;
@@ -19,6 +25,12 @@ namespace EpsonProjectorEpi
         private ProjectorPower _currentPower = ProjectorPower.PowerOff;
         private ProjectorMute _currentMute = ProjectorMute.MuteOff;
         private ProjectorInput _currentInput = ProjectorInput.Dvi;
+
+        private readonly FeedbackCollection<Feedback> _feedbacks = new FeedbackCollection<Feedback>(); 
+        public override FeedbackCollection<Feedback> Feedbacks 
+        {
+            get { return _feedbacks; }
+        }
 
         public ProjectorPower CurrentPower 
         {
@@ -34,18 +46,8 @@ namespace EpsonProjectorEpi
                     EnqueueCmd(_currentMute.Command);
                 }
 
-                /*if (_currentPower == ProjectorPower.PowerOff || _currentPower == ProjectorPower.Warming)
-                    CurrentMute = ProjectorMute.MuteOff;*/
-
                 UpdatePollForPowerState();
-
-                PowerIsOnFeedback.FireUpdate();
-                IsCoolingDownFeedback.FireUpdate();
-                IsWarmingUpFeedback.FireUpdate();
-                CurrentInputFeedback.FireUpdate();
-                CurrentInputValueFeedback.FireUpdate();
-                MuteIsOnFb.FireUpdate();
-                MuteIsOffFb.FireUpdate();
+                Feedbacks.ForEach(fb => fb.FireUpdate());
             }
         }
 
@@ -57,8 +59,7 @@ namespace EpsonProjectorEpi
                 _currentInput = value;
                 Debug.Console(1, this, "Input set to {0}", _currentInput.Name);
 
-                CurrentInputFeedback.FireUpdate();
-                CurrentInputValueFeedback.FireUpdate();
+                Feedbacks.ForEach(fb => fb.FireUpdate());
             }
         }
 
@@ -70,8 +71,7 @@ namespace EpsonProjectorEpi
                 _currentMute = value;
                 Debug.Console(1, this, "Mute set to {0}", _currentMute.Name);
 
-                MuteIsOnFb.FireUpdate();
-                MuteIsOffFb.FireUpdate();
+                Feedbacks.ForEach(fb => fb.FireUpdate());
             }
         }
 
@@ -81,11 +81,7 @@ namespace EpsonProjectorEpi
             get { return _serialNumber; }
         }
 
-        private int _lampHours;
-        public int LampHours
-        {
-            get { return _lampHours; }
-        }
+        public int LampHours { get; private set; }
 
         public StatusMonitorBase CommunicationMonitor { get; private set; }
 
@@ -118,6 +114,8 @@ namespace EpsonProjectorEpi
             WarmupTimer = new CTimer(delegate { }, Timeout.Infinite);
             CooldownTimer = new CTimer(delegate { }, Timeout.Infinite);
 
+            ConfigureInputs(config);
+
             serialNumberManager.StateUpdated += (sender, args) =>
                 {
                     _serialNumber = args.CurrentState;
@@ -126,7 +124,7 @@ namespace EpsonProjectorEpi
 
             lampHoursManager.StateUpdated += (sender, args) =>
                 {
-                    _lampHours = args.CurrentState;
+                    LampHours = args.CurrentState;
                     LampHoursFb.FireUpdate();
                 };
 
@@ -135,6 +133,7 @@ namespace EpsonProjectorEpi
                     if (_currentPower == args.CurrentState)
                         return;
 
+                    
                     CurrentPower = args.CurrentState;
                 };
 
@@ -180,6 +179,72 @@ namespace EpsonProjectorEpi
                 };
         }
 
+        private void ConfigureInputs(PropsConfig config)
+        {
+            foreach (var input in ProjectorInput.GetAll())
+            {
+                Debug.Console(0, this, "Adding Routing input - {0}", input.Name);
+
+                var newInput = new RoutingInputPort(
+                    input.Name,
+                    eRoutingSignalType.Video,
+                    eRoutingPortConnectionType.BackplaneOnly,
+                    input,
+                    this) { Port = input.Value };
+
+                InputPorts.Add(newInput);
+            }
+
+            if (config.Inputs != null)
+            {
+                foreach (var inputPort in InputPorts)
+                    inputPort.Port = null;
+
+                foreach (var item in config.Inputs)
+                    AddInputByNumberFromConfig(item);
+            }
+
+            var port = InputPorts.FirstOrDefault();
+            if (port == null)
+                throw new NullReferenceException("default input port");
+
+            _currentInput = port.Selector as ProjectorInput;
+            if (_currentInput == null)
+                throw new NullReferenceException("default input");
+        }
+
+        private void AddInputByNumberFromConfig(KeyValuePair<string, int> item)
+        {
+            try
+            {
+                Debug.Console(1, this, "Attempting to add input routing by Number... | {0} : {1}", item.Key, item.Value);
+                var input = ProjectorInput.FromName(item.Key, true);
+
+                var routingPort = InputPorts[input.Name];
+                if (routingPort == null)
+                    return;
+
+                Debug.Console(1, "Adding input routing by Number... | {0} : {1}", item.Key, item.Value);
+                routingPort.Port = input.Value;
+            }
+            catch (ArgumentException ex)
+            {
+                Debug.Console(1, this, "Error adding input routing ports : {0}", ex.Message);
+                Debug.Console(1, this, "Config value does not match existing inputs - ");
+                ProjectorInput
+                    .GetAll()
+                    .ToList()
+                    .ForEach(input => Debug.Console(1, this, input.Name));
+
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(1, this, "Error adding input routing ports : {0}", ex.Message);
+                throw;
+            }
+        }
+
         public override bool CustomActivate()
         {
             Debug.Console(1, this, "Good morning, Dave...");
@@ -199,19 +264,59 @@ namespace EpsonProjectorEpi
             MuteIsOffFb = new BoolFeedback(() => !MuteIsOnFb.BoolValue);
             StatusFb = new StringFeedback(() => CommunicationMonitor.Status.ToString());
             CurrentInputValueFeedback = new IntFeedback(() => CurrentPower == ProjectorPower.PowerOn ? _currentInput.Value : 0);
+
+            Feedbacks.AddRange(new Feedback[]
+            {
+                PowerIsOnFeedback,
+                IsWarmingUpFeedback,
+                IsCoolingDownFeedback,
+                MuteIsOffFb,
+                CurrentInputFeedback,
+                CurrentInputValueFeedback,
+                SerialNumberFb,
+                LampHoursFb,
+                MuteIsOnFb,
+                StatusFb
+            });
         }
 
         public void ExecuteSwitchNumeric(int input)
         {
-            if (input == 0)
+            if (CheckIfValueIsMute(input)) return;
+
+            var result = InputPorts
+                .Where(x => x.Port != null)
+                .FirstOrDefault(x => Convert.ToInt32(x.Port) == input);
+
+            if (result != null)
+                ExecuteSwitch(result.Selector);
+        }
+
+        private bool CheckIfValueIsMute(int input)
+        {
+            if (input == default(int))
             {
                 MuteOn();
-                return;
+                return true;
             }
 
-            ProjectorInput result;
-            if (ProjectorInput.TryFromValue(input, out result))
-                ExecuteSwitch(result);
+            if (input == ProjectorMuteOn)
+            {
+                MuteOn();
+                return true;
+            }
+
+            if (input == ProjectorMuteOff)
+            {
+                MuteOff();
+                return true;
+            }
+
+            if (input != ProjectorMuteToggle) 
+                return false;
+
+            MuteToggle();
+            return true;
         }
 
         public void ExecuteSwitch(ProjectorInput input)
@@ -404,13 +509,21 @@ namespace EpsonProjectorEpi
 
         public void LinkToApi(Crestron.SimplSharpPro.DeviceSupport.BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
         {
-            Debug.Console(1, this, "Attempting to link {0} at {1}", trilist.ID, joinStart);
+            try
+            {
+                Debug.Console(1, this, "Attempting to link {0} at {1}", trilist.ID, joinStart);
 
-            var joinMap = new EpsonProjectorJoinMap(joinStart);
-            if (bridge != null)
-                bridge.AddJoinMap(Key, joinMap);
+                var joinMap = new EpsonProjectorJoinMap(joinStart);
+                if (bridge != null)
+                    bridge.AddJoinMap(Key, joinMap);
 
-            new EpsonProjectorBridge().LinkToApi(this, trilist, joinMap);
+                new EpsonProjectorBridge().LinkToApi(this, trilist, joinMap);
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(1, this, "Error linking Projector! {0}", ex.Message);
+                throw;
+            }
         }
 
         #endregion

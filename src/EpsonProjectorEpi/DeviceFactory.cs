@@ -21,21 +21,6 @@ namespace EpsonProjectorEpi
             var coms = CommFactory.CreateCommForDevice(dc);
             var device = new EpsonProjector(dc.Key, dc.Name, props, coms);
 
-            foreach (var input in ProjectorInput.GetAll())
-            {
-                Debug.Console(0, device, "Adding Routing input - {0}", input.Name);
-
-                var newInput = new RoutingInputPort(
-                        device.Key + "-" + input.Name,
-                        eRoutingSignalType.Video,
-                        eRoutingPortConnectionType.BackplaneOnly,
-                        input,
-                        device);
-
-
-                device.InputPorts.Add(newInput);
-            }
-
             return device;
         }
     }
