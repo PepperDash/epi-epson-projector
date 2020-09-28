@@ -54,6 +54,12 @@
                     "screen": {
                         "upRelay": 3,
                         "downRelay": 4
+                    },
+                    "inputs": {
+                        "hdmi1" : 1,
+                        "dvi": 2,
+                        "comp": 3,
+                        "vga": 4
                     }
                 }
             },
