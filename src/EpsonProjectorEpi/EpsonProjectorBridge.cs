@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-using Crestron.SimplSharp.Reflection;
+using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
-using PepperDash.Essentials.Core.Bridges;
 using EpsonProjectorEpi.Enums;
 
 namespace EpsonProjectorEpi
@@ -28,37 +24,61 @@ namespace EpsonProjectorEpi
             trilist.SetSigTrueAction(joinMap.MuteToggle.JoinNumber, proj.MuteToggle);
             trilist.SetUShortSigAction(joinMap.InputSelectOffset.JoinNumber, x => proj.ExecuteSwitchNumeric(x));
 
-            for (int x = 0; x < joinMap.InputSelectOffset.JoinNumber; x++)
-            {
-                var joinActual = joinMap.InputSelectOffset.JoinNumber + x;
-                var inputActual = x + 1;
+            for (var x = 0; x < joinMap.InputSelectOffset.JoinNumber; x++)
+                LinkInputSelect(proj, trilist, joinMap, x);
 
-                ProjectorInput input;
-                if (!ProjectorInput.TryFromValue(inputActual, out input))
-                    continue;
-
-                Debug.Console(1, proj, "Linking input:{0} to join {1}", input.Name, joinActual);
-
-                trilist.SetSigTrueAction((uint)joinActual, () => proj.ExecuteSwitch(input));
-
-                var fb = new StringFeedback(() => input.Name);
-                fb.LinkInputSig(trilist.StringInput[(uint)joinActual]);
-                fb.FireUpdate();
-            }
-
+            Debug.Console(1, proj, "Linking Power On Feedback...");
             proj.PowerIsOnFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOn.JoinNumber]);
+
+            Debug.Console(1, proj, "Linking Warming Feedback...");
             proj.IsWarmingUpFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Warming.JoinNumber]);
+
+            Debug.Console(1, proj, "Linking Cooling Feedback...");
             proj.IsCoolingDownFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Cooling.JoinNumber]);
+
+            Debug.Console(1, proj, "Linking Mute On Feedback...");
             proj.MuteIsOnFb.LinkInputSig(trilist.BooleanInput[joinMap.MuteOn.JoinNumber]);
+
+            Debug.Console(1, proj, "Linking Mute Off Feedback...");
             proj.MuteIsOffFb.LinkInputSig(trilist.BooleanInput[joinMap.MuteOff.JoinNumber]);
+
+            Debug.Console(1, proj, "Linking Communication Monitor Feedback...");
             proj.CommunicationMonitor.IsOnlineFeedback.LinkInputSig(trilist.BooleanInput[joinMap.IsOnline.JoinNumber]);
+
+            Debug.Console(1, proj, "Linking Status Feedback...");
             proj.StatusFb.LinkInputSig(trilist.StringInput[joinMap.Status.JoinNumber]);
+
+            Debug.Console(1, proj, "Linking Lampt Hours Feedback...");
             proj.LampHoursFb.LinkInputSig(trilist.UShortInput[joinMap.LampHours.JoinNumber]);
+
+            Debug.Console(1, proj, "Linking Current Input Feedback...");
             proj.CurrentInputValueFeedback.LinkInputSig(trilist.UShortInput[joinMap.InputSelectOffset.JoinNumber]);
+
+            Debug.Console(1, proj, "Linking Serial Number Feedback...");
             proj.SerialNumberFb.LinkInputSig(trilist.StringInput[joinMap.SerialNumber.JoinNumber]);
         }
 
-        private static void SetupNameFb(EpsonProjector proj, Crestron.SimplSharpPro.DeviceSupport.BasicTriList trilist, EpsonProjectorJoinMap joinMap)
+        private static void LinkInputSelect(EpsonProjector proj, BasicTriList trilist, EpsonProjectorJoinMap joinMap, int x)
+        {
+            var joinActual = joinMap.InputSelectOffset.JoinNumber + x;
+            var inputActual = x + 1;
+
+            var routingPort =
+                proj.InputPorts.Where(port => port.Port != null)
+                    .FirstOrDefault(t => Convert.ToInt32(t.Port) == inputActual);
+
+            if (routingPort == null) return;
+
+            Debug.Console(1, proj, "Linking input:{0} to join {1}", routingPort.Key, joinActual);
+
+            trilist.SetSigTrueAction((uint) joinActual, () => proj.ExecuteSwitch(routingPort.Selector));
+
+            var fb = new StringFeedback(() => routingPort.Key);
+            fb.LinkInputSig(trilist.StringInput[(uint) joinActual]);
+            fb.FireUpdate();
+        }
+
+        private static void SetupNameFb(EpsonProjector proj, BasicTriList trilist, EpsonProjectorJoinMap joinMap)
         {
             var nameFb = new StringFeedback(() => proj.Name);
             nameFb.LinkInputSig(trilist.StringInput[joinMap.Name.JoinNumber]);

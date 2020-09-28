@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-using EpsonProjectorEpi.Commands;
-
-namespace EpsonProjectorEpi.Enums
+﻿namespace EpsonProjectorEpi.Enums
 {
     public abstract class ResponseEnumeration<T, TState> : Enumeration<T> 
         where T : ResponseEnumeration<T, TState>

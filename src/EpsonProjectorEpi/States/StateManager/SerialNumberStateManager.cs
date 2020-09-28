@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-using PepperDash.Core;
-using PepperDash.Essentials.Core;
-using EpsonProjectorEpi.Enums;
-using EpsonProjectorEpi.Commands;
+﻿using PepperDash.Core;
 using EpsonProjectorEpi.Queries;
 
 namespace EpsonProjectorEpi.States

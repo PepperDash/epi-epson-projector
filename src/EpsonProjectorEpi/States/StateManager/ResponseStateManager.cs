@@ -1,12 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-using PepperDash.Core;
-using PepperDash.Essentials.Core;
+﻿using PepperDash.Core;
 using EpsonProjectorEpi.Enums;
-using EpsonProjectorEpi.Commands;
 using EpsonProjectorEpi.Queries;
 
 namespace EpsonProjectorEpi.States
@@ -28,6 +21,7 @@ namespace EpsonProjectorEpi.States
             if (!data.Contains(ResponseEnumeration<T, TResponse>.SearchString))
                 return;
 
+            Debug.Console(2, this, "Processing Response:{0}", data);
             var result = new ResponseProcessor<T, TResponse>(Key, data).Handle();
 
             if (result == null)

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-using EpsonProjectorEpi.Commands;
-using EpsonProjectorEpi.Enums;
+﻿using EpsonProjectorEpi.Commands;
 
 namespace EpsonProjectorEpi.Enums
 {

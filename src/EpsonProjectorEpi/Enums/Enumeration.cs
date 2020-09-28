@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using PepperDash.Core;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.Reflection;
@@ -158,7 +157,7 @@ namespace EpsonProjectorEpi.Enums
                 List<TEnum> options = new List<TEnum>();
                 foreach (var enumType in enumTypes)
                 {
-                    Debug.Console(0, "Found enum type: {0}", enumType.Name);
+                    Debug.Console(2, "Found enum type: {0}", enumType.Name);
                     var fields = enumType.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.DeclaredOnly)
                         .Select(x => x.GetValue(null))
                         .Cast<TEnum>();
@@ -168,7 +167,7 @@ namespace EpsonProjectorEpi.Enums
                         if (field == null)
                             continue;
 
-                        Debug.Console(0, "Adding field to this enum:{0} - {1}", field.Name, enumType.Name);
+                        Debug.Console(1, "Adding field to this enum:{0} - {1}", field.Name, enumType.Name);
                         if (options.Contains(field))
                             throw new Exception("This enum already exists");
 
@@ -193,19 +192,19 @@ namespace EpsonProjectorEpi.Enums
                 throw new ArgumentNullException(name);
 
             CheckAll();
-            if (ignoreCase)
+            if (!ignoreCase)
             {
                 var result = _all.FirstOrDefault(x => x.Name.Equals(name));
                 if (result == null)
-                    throw new ArgumentNullException(name);
+                    throw new ArgumentException(name);
 
                 return result;
             }
             else
             {
-                var result = _all.FirstOrDefault(x => x.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase));
+                var result = _all.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
                 if (result == null)
-                    throw new ArgumentNullException(name);
+                    throw new ArgumentException(name);
 
                 return result;
             }
@@ -225,7 +224,7 @@ namespace EpsonProjectorEpi.Enums
             CheckAll();
             var result = _all.FirstOrDefault(x => x.Value == value);
             if (result == null)
-                throw new ArgumentNullException(value.ToString());
+                throw new ArgumentException(value.ToString());
 
             return result;
         }

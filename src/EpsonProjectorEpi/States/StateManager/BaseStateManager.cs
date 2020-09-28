@@ -1,13 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Crestron.SimplSharp;
 using PepperDash.Core;
-using PepperDash.Essentials.Core;
-using EpsonProjectorEpi.Enums;
-using EpsonProjectorEpi.Commands;
-using EpsonProjectorEpi.Queries;
 
 namespace EpsonProjectorEpi.States
 {
@@ -69,11 +62,7 @@ namespace EpsonProjectorEpi.States
 
         protected virtual void OnStateUpdated(T state)
         {
-            if (state.Equals(State))
-                return;
-
             State = state;
-            Debug.Console(1, this, "Received state update: '{0}'", state.ToString());
 
             var handler = StateUpdated;
             if (handler == null) 

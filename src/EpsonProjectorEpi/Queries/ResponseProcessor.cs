@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
 using System.Text.RegularExpressions;
-using Crestron.SimplSharp;
-using PepperDash.Core;
 using EpsonProjectorEpi.Enums;
 
 namespace EpsonProjectorEpi.Queries
