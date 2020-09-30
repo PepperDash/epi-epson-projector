@@ -18,7 +18,7 @@
 
         public string CmdString
         {
-            get { return "SOURCE 30"; }
+            get { return "SOURCE A0"; }
         }
 
         #endregion
@@ -30,7 +30,7 @@
 
         public string CmdString
         {
-            get { return "SOURCE A0"; }
+            get { return "SOURCE 30"; }
         }
 
         #endregion
