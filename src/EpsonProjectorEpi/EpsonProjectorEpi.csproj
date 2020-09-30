@@ -103,6 +103,8 @@
     <Compile Include="Enums\InputEnums.cs" />
     <Compile Include="EpsonProjector.cs" />
     <Compile Include="EpsonProjectorBridge.cs" />
+    <Compile Include="Interfaces\IPowerWithWarmingCooling.cs" />
+    <Compile Include="Mute\EpsonMute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Queries\BaseResponseProcessor.cs" />
     <Compile Include="Queries\SerialNumberResponseProcessor.cs" />

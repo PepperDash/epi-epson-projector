@@ -19,9 +19,9 @@ namespace EpsonProjectorEpi
 
             trilist.SetSigTrueAction(joinMap.PowerOn.JoinNumber, proj.PowerOn);
             trilist.SetSigTrueAction(joinMap.PowerOff.JoinNumber, proj.PowerOff);
-            trilist.SetSigTrueAction(joinMap.MuteOn.JoinNumber, proj.MuteOn);
-            trilist.SetSigTrueAction(joinMap.MuteOff.JoinNumber, proj.MuteOff);
-            trilist.SetSigTrueAction(joinMap.MuteToggle.JoinNumber, proj.MuteToggle);
+            trilist.SetSigTrueAction(joinMap.MuteOn.JoinNumber, proj.VideoMuteOn);
+            trilist.SetSigTrueAction(joinMap.MuteOff.JoinNumber, proj.VideoMuteOff);
+            trilist.SetSigTrueAction(joinMap.MuteToggle.JoinNumber, proj.VideoMuteToggle);
             trilist.SetUShortSigAction(joinMap.InputSelectOffset.JoinNumber, x => proj.ExecuteSwitchNumeric(x));
 
             for (var x = 0; x < joinMap.InputSelectOffset.JoinNumber; x++)
@@ -37,10 +37,10 @@ namespace EpsonProjectorEpi
             proj.IsCoolingDownFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Cooling.JoinNumber]);
 
             Debug.Console(1, proj, "Linking Mute On Feedback...");
-            proj.MuteIsOnFb.LinkInputSig(trilist.BooleanInput[joinMap.MuteOn.JoinNumber]);
+            proj.VideoMuteIsOn.LinkInputSig(trilist.BooleanInput[joinMap.MuteOn.JoinNumber]);
 
             Debug.Console(1, proj, "Linking Mute Off Feedback...");
-            proj.MuteIsOffFb.LinkInputSig(trilist.BooleanInput[joinMap.MuteOff.JoinNumber]);
+            proj.VideoMuteIsOff.LinkInputSig(trilist.BooleanInput[joinMap.MuteOff.JoinNumber]);
 
             Debug.Console(1, proj, "Linking Communication Monitor Feedback...");
             proj.CommunicationMonitor.IsOnlineFeedback.LinkInputSig(trilist.BooleanInput[joinMap.IsOnline.JoinNumber]);
