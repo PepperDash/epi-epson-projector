@@ -10,6 +10,7 @@ namespace EpsonProjectorEpi.Commands
         private readonly CrestronQueue<IEpsonCmd> _cmdQueue;
         private readonly Thread _worker;
         private readonly CEvent _wh = new CEvent();
+        private readonly CCriticalSection _lock = new CCriticalSection();
 
         public bool Disposed { get; private set; }
 
@@ -63,8 +64,32 @@ namespace EpsonProjectorEpi.Commands
 
         public void EnqueueCmd(IEpsonCmd cmd)
         {
-            _cmdQueue.Enqueue(cmd);
-            _wh.Set();
+            try
+            {
+                _lock.Enter();
+                _cmdQueue.Enqueue(cmd);
+                _wh.Set();
+            }
+            finally
+            {
+                _lock.Leave();
+            }
+        }
+
+        public void EnqueueCmd(params IEpsonCmd[] cmds)
+        {
+            try
+            {
+                _lock.Enter();
+                foreach (var cmd in cmds)
+                    _cmdQueue.Enqueue(cmd);
+
+                _wh.Set();
+            }
+            finally
+            {
+                _lock.Leave();
+            }
         }
 
         #region IDisposable Members
@@ -82,7 +107,8 @@ namespace EpsonProjectorEpi.Commands
 
             if (disposing)
             {
-                EnqueueCmd(null);
+                _cmdQueue.Enqueue(null);
+                _wh.Set();
                 _worker.Join();
                 _wh.Close();
             }
