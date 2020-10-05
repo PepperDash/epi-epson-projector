@@ -3,13 +3,12 @@ using System.Linq;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
-using EpsonProjectorEpi.Enums;
 
 namespace EpsonProjectorEpi
 {
     public class EpsonProjectorBridge
     {
-        public void LinkToApi(EpsonProjector proj, Crestron.SimplSharpPro.DeviceSupport.BasicTriList trilist, EpsonProjectorJoinMap joinMap)
+        public void LinkToApi(EpsonProjector proj, BasicTriList trilist, EpsonProjectorJoinMap joinMap)
         {
             SetupNameFb(proj, trilist, joinMap);
 
@@ -27,34 +26,16 @@ namespace EpsonProjectorEpi
             for (var x = 0; x < joinMap.InputSelectOffset.JoinNumber; x++)
                 LinkInputSelect(proj, trilist, joinMap, x);
 
-            Debug.Console(1, proj, "Linking Power On Feedback...");
             proj.PowerIsOnFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOn.JoinNumber]);
-
-            Debug.Console(1, proj, "Linking Warming Feedback...");
+            proj.PowerIsOffFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOff.JoinNumber]);
             proj.IsWarmingUpFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Warming.JoinNumber]);
-
-            Debug.Console(1, proj, "Linking Cooling Feedback...");
             proj.IsCoolingDownFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Cooling.JoinNumber]);
-
-            Debug.Console(1, proj, "Linking Mute On Feedback...");
             proj.VideoMuteIsOn.LinkInputSig(trilist.BooleanInput[joinMap.MuteOn.JoinNumber]);
-
-            Debug.Console(1, proj, "Linking Mute Off Feedback...");
             proj.VideoMuteIsOff.LinkInputSig(trilist.BooleanInput[joinMap.MuteOff.JoinNumber]);
-
-            Debug.Console(1, proj, "Linking Communication Monitor Feedback...");
             proj.CommunicationMonitor.IsOnlineFeedback.LinkInputSig(trilist.BooleanInput[joinMap.IsOnline.JoinNumber]);
-
-            Debug.Console(1, proj, "Linking Status Feedback...");
             proj.StatusFb.LinkInputSig(trilist.StringInput[joinMap.Status.JoinNumber]);
-
-            Debug.Console(1, proj, "Linking Lampt Hours Feedback...");
             proj.LampHoursFb.LinkInputSig(trilist.UShortInput[joinMap.LampHours.JoinNumber]);
-
-            Debug.Console(1, proj, "Linking Current Input Feedback...");
             proj.CurrentInputValueFeedback.LinkInputSig(trilist.UShortInput[joinMap.InputSelectOffset.JoinNumber]);
-
-            Debug.Console(1, proj, "Linking Serial Number Feedback...");
             proj.SerialNumberFb.LinkInputSig(trilist.StringInput[joinMap.SerialNumber.JoinNumber]);
         }
 

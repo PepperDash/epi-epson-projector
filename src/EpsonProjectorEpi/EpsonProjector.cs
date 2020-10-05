@@ -76,7 +76,8 @@ namespace EpsonProjectorEpi
         public StringFeedback StatusFb { get; private set; }
         public StringFeedback SerialNumberFb { get; private set; }
         public IntFeedback LampHoursFb { get; private set; }
-        public IntFeedback CurrentInputValueFeedback { get; set; }
+        public IntFeedback CurrentInputValueFeedback { get; private set; }
+        public BoolFeedback PowerIsOffFeedback { get; private set; }
 
         public string ScreenName { get; private set; }
 
@@ -162,51 +163,50 @@ namespace EpsonProjectorEpi
 
         private void ConfigureInputs(PropsConfig config)
         {
-            foreach (var input in ProjectorInput.GetAll())
-            {
-                Debug.Console(0, this, "Adding Routing input - {0}", input.Name);
-
-                var newInput = new RoutingInputPort(
-                    input.Name,
-                    eRoutingSignalType.Video,
-                    eRoutingPortConnectionType.BackplaneOnly,
-                    input,
-                    this) { Port = input.Value };
-
-                InputPorts.Add(newInput);
-            }
-
-            if (config.Inputs != null)
-            {
-                foreach (var inputPort in InputPorts)
-                    inputPort.Port = null;
-
-                foreach (var item in config.Inputs)
-                    AddInputByNumberFromConfig(item);
-            }
-
-            var port = InputPorts.FirstOrDefault();
-            if (port == null)
-                throw new NullReferenceException("default input port");
-
-            _currentInput = port.Selector as ProjectorInput;
-            if (_currentInput == null)
-                throw new NullReferenceException("default input");
-        }
-
-        private void AddInputByNumberFromConfig(KeyValuePair<string, int> item)
-        {
             try
             {
-                Debug.Console(1, this, "Attempting to add input routing by Number... | {0} : {1}", item.Key, item.Value);
-                var input = ProjectorInput.FromName(item.Key, true);
+                if (config.Inputs != null)
+                {
+                    foreach (var item in config.Inputs)
+                    {
+                        Debug.Console(1, this, "Adding input routing by Number... | {0} : {1}", item.Key, item.Value);
 
-                var routingPort = InputPorts[input.Name];
-                if (routingPort == null)
-                    return;
+                        var input = ProjectorInput.FromName(item.Key, true);
 
-                Debug.Console(1, "Adding input routing by Number... | {0} : {1}", item.Key, item.Value);
-                routingPort.Port = input.Value;
+                        var newInput = new RoutingInputPort(
+                            input.Name,
+                            eRoutingSignalType.Video,
+                            eRoutingPortConnectionType.BackplaneOnly,
+                            input,
+                            this) {Port = item.Value};
+
+                        InputPorts.Add(newInput);
+                    }
+                }
+                else
+                {
+                    foreach (var input in ProjectorInput.GetAll())
+                    {
+                        Debug.Console(1, this, "Adding input routing by Number... | {0} : {1}", input.Name, input.Value);
+
+                        var newInput = new RoutingInputPort(
+                            input.Name,
+                            eRoutingSignalType.Video,
+                            eRoutingPortConnectionType.BackplaneOnly,
+                            input,
+                            this) {Port = input.Value};
+
+                        InputPorts.Add(newInput);
+                    }
+                }
+
+                var port = InputPorts.FirstOrDefault();
+                if (port == null)
+                    throw new NullReferenceException("default input port");
+
+                _currentInput = port.Selector as ProjectorInput;
+                if (_currentInput == null)
+                    throw new NullReferenceException("default input");
             }
             catch (ArgumentException ex)
             {
@@ -240,13 +240,14 @@ namespace EpsonProjectorEpi
 
         private void BuildFeedbacks()
         {
+            PowerIsOffFeedback = new BoolFeedback(() => CurrentPower == ProjectorPower.PowerOff);
             SerialNumberFb = new StringFeedback(() => SerialNumber);
             LampHoursFb = new IntFeedback(() => LampHours);
             StatusFb = new StringFeedback(() => CommunicationMonitor.Status.ToString());
 
             CurrentInputValueFeedback = new IntFeedback(() =>
             {
-                if (CurrentPower == ProjectorPower.PowerOn)
+                if (CurrentPower != ProjectorPower.PowerOn)
                     return 0;
 
                 var result =
@@ -260,6 +261,7 @@ namespace EpsonProjectorEpi
 
             Feedbacks.AddRange(new Feedback[]
             {
+                PowerIsOffFeedback,
                 PowerIsOnFeedback,
                 IsWarmingUpFeedback,
                 IsCoolingDownFeedback,

@@ -81,13 +81,13 @@
         public static readonly InputResponseEnum Hdmi = new InputResponseEnum(1, "Hdmi")
         {
             ResponseState = ProjectorInput.Hdmi,
-            ResponseString = "SOURCE=A0"
+            ResponseString = "SOURCE=30"
         };
 
         public static readonly InputResponseEnum Dvi = new InputResponseEnum(2, "Dvi")
         {
             ResponseState = ProjectorInput.Dvi,
-            ResponseString = "SOURCE=30"
+            ResponseString = "SOURCE=A0"
         };
 
         public static readonly InputResponseEnum Computer = new InputResponseEnum(3, "Computer")
