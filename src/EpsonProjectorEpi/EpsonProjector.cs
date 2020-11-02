@@ -121,7 +121,6 @@ namespace EpsonProjectorEpi
                     if (_currentPower == args.CurrentState)
                         return;
 
-                    
                     CurrentPower = args.CurrentState;
                 };
 
@@ -314,10 +313,7 @@ namespace EpsonProjectorEpi
 
         public void ExecuteSwitch(ProjectorInput input)
         {
-            PowerOn();
-            _videoMute.VideoMuteOff();
-
-            CheckPowerAndSwitchInput(input);
+            ExecuteSwitch(input as object);
         }
 
         public override void ExecuteSwitch(object inputSelector)
