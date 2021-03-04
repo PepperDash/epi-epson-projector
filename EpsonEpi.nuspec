@@ -14,7 +14,7 @@
     <projectUrl>https://github.com/PepperDash-Engineering/epi-display-epson_projector</projectUrl>
     <copyright>Copyright 2021</copyright>
     <!-- Update description-->
-    <description>Crestron NVX</description>
+    <description>Epson Epi</description>
     <tags>crestron 3series 4series</tags>
     <!-- Update repository url with the actual URL of the plugin repo-->
     <repository type="git" url="https://github.com/PepperDash-Engineering/epi-display-epson_projector"/>
