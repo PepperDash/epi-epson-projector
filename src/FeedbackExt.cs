@@ -22,7 +22,7 @@ namespace EpsonProjectorEpi
                         (sender, args) =>
                             Debug.Console(1,
                                 keyed,
-                                "Received an update from {0}:{1}",
+                                "Received an update {0}: '{1}'",
                                 feedback.Key,
                                 feedback.StringValue);
 
@@ -31,7 +31,7 @@ namespace EpsonProjectorEpi
                         (sender, args) =>
                             Debug.Console(1,
                                 keyed,
-                                "Received an update from {0}:{1}",
+                                "Received an update {0}: '{1}'",
                                 feedback.Key,
                                 feedback.IntValue);
 
@@ -40,7 +40,7 @@ namespace EpsonProjectorEpi
                         (sender, args) =>
                             Debug.Console(1,
                                 keyed,
-                                "Received an update from {0}:{1}",
+                                "Received an update {0}: '{1}'",
                                 feedback.Key,
                                 feedback.BoolValue);
             }

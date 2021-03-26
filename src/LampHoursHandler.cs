@@ -31,12 +31,12 @@ namespace EpsonProjectorEpi
         private void HandleLineReceived(object sender, GenericCommMethodReceiveTextArgs genericCommMethodReceiveTextArgs)
         {
             var result = genericCommMethodReceiveTextArgs.Text;
+            if (!result.Contains("LAMP="))
+                return;
+
             _queue.Enqueue(new ProcessStringMessage(result,
                 s =>
                     {
-                        if (!s.Contains("LAMP="))
-                            return;
-
                         var index = s.IndexOf("=", StringComparison.Ordinal) + 1;
                         _lampHours = Convert.ToInt32(result.Remove(0, index));
                         LampHoursFeedback.FireUpdate();

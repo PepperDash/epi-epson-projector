@@ -18,6 +18,11 @@ namespace EpsonProjectorEpi
 
                 Coms.SendText(Message + "\x0D");
             }
+
+            public override string ToString()
+            {
+                return Message;
+            }
         }
 
         public const string SourceComputer = "SOURCE 11";
