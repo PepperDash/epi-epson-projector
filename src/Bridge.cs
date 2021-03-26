@@ -21,6 +21,16 @@ namespace EpsonProjectorEpi
             trilist.SetSigTrueAction(joinMap.MuteOn.JoinNumber, proj.VideoMuteOn);
             trilist.SetSigTrueAction(joinMap.MuteOff.JoinNumber, proj.VideoMuteOff);
             trilist.SetSigTrueAction(joinMap.MuteToggle.JoinNumber, proj.VideoMuteToggle);
+            trilist.SetUShortSigAction(joinMap.InputSelectOffset.JoinNumber,
+                value =>
+                    {
+                        if (value == 0)
+                            proj.VideoMuteOn();
+                        else
+                        {
+                            proj.ExecuteSwitch(value);
+                        }
+                    });
 
             for (var x = 0; x < joinMap.InputSelectOffset.JoinNumber; x++)
                 LinkInputSelect(proj, trilist, joinMap, x);
