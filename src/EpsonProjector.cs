@@ -420,7 +420,7 @@ namespace EpsonProjectorEpi
             _requestedMuteStatus = VideoMuteHandler.VideoMuteStatusEnum.Muted;
             ProcessRequestedMuteStatus();
             Feedbacks.FireAllFeedbacks();
-            _pollTimer.Reset(438, _pollTime);
+            _pollTimer.Reset(329, _pollTime);
         }
 
         public void VideoMuteOff()
@@ -428,7 +428,7 @@ namespace EpsonProjectorEpi
             _requestedMuteStatus = VideoMuteHandler.VideoMuteStatusEnum.Unmuted;
             ProcessRequestedMuteStatus();
             Feedbacks.FireAllFeedbacks();
-            _pollTimer.Reset(438, _pollTime);
+            _pollTimer.Reset(329, _pollTime);
         }
 
         public BoolFeedback VideoMuteIsOn { get; private set; }
@@ -438,7 +438,7 @@ namespace EpsonProjectorEpi
             _requestedPowerStatus = PowerHandler.PowerStatusEnum.PowerOn;
             ProcessRequestedPowerStatus();
             Feedbacks.FireAllFeedbacks();
-            _pollTimer.Reset(438, _pollTime);
+            _pollTimer.Reset(329, _pollTime);
         }
 
         public void PowerOff()
@@ -449,7 +449,7 @@ namespace EpsonProjectorEpi
 
             ProcessRequestedPowerStatus();
             Feedbacks.FireAllFeedbacks();
-            _pollTimer.Reset(438, _pollTime);
+            _pollTimer.Reset(329, _pollTime);
         }
 
         public void PowerToggle()
