@@ -27,6 +27,15 @@ namespace EpsonProjectorEpi
                 };
 
             SerialNumberFeedback = new StringFeedback("SerialNumber", () => _serialNumber);
+
+            CrestronEnvironment.ProgramStatusEventHandler += type =>
+            {
+                if (type != eProgramStatusEventType.Stopping)
+                    return;
+
+                _pollTimer.Stop();
+                _pollTimer.Dispose();
+            };
         }
 
         private void HandleLineReceived(object sender, GenericCommMethodReceiveTextArgs genericCommMethodReceiveTextArgs)

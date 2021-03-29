@@ -31,15 +31,7 @@ namespace EpsonProjectorEpi
         {
             _coms = coms;
             if (config.Monitor == null)
-            {
-                config.Monitor = new CommunicationMonitorConfig()
-                    {
-                        PollInterval = 30000,
-                        PollString = Commands.PowerPoll + "\x0D",
-                        TimeToError = 120000,
-                        TimeToWarning = 360000,
-                    };
-            }
+                config.Monitor = GetDefaultMonitorConfig();
 
             CommunicationMonitor = new GenericCommunicationMonitor(this, coms, config.Monitor);
             var gather = new CommunicationGather(coms, "\x0D:");
@@ -128,6 +120,26 @@ namespace EpsonProjectorEpi
                     new StringFeedback("RequestedPower", () => _requestedPowerStatus.ToString()),
                     new StringFeedback("RequestedMute", () => _requestedMuteStatus.ToString()),
                     new StringFeedback("RequestedInput", () => _requestedVideoInput.ToString()),
+                };
+
+            CrestronEnvironment.ProgramStatusEventHandler += type =>
+                {
+                    if (type != eProgramStatusEventType.Stopping)
+                        return;
+
+                    _pollTimer.Stop();
+                    _pollTimer.Dispose();
+                };
+        }
+
+        private static CommunicationMonitorConfig GetDefaultMonitorConfig()
+        {
+            return new CommunicationMonitorConfig()
+                {
+                    PollInterval = 30000,
+                    PollString = Commands.PowerPoll + "\x0D",
+                    TimeToError = 120000,
+                    TimeToWarning = 360000,
                 };
         }
 
