@@ -127,6 +127,9 @@ namespace EpsonProjectorEpi
                     if (type != eProgramStatusEventType.Stopping)
                         return;
 
+                    if (_pollTimer == null)
+                        return;
+
                     _pollTimer.Stop();
                     _pollTimer.Dispose();
                 };
