@@ -141,8 +141,8 @@ namespace EpsonProjectorEpi
                 {
                     PollInterval = 30000,
                     PollString = Commands.PowerPoll + "\x0D",
-                    TimeToError = 120000,
-                    TimeToWarning = 360000,
+                    TimeToWarning = 120000,
+                    TimeToError = 360000,
                 };
         }
 
