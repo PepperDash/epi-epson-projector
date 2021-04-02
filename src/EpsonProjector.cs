@@ -1,12 +1,12 @@
 ﻿using System;
 using Crestron.SimplSharp;
-using Crestron.SimplSharpPro.CrestronThread;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Essentials.Core.Queues;
 using Feedback = PepperDash.Essentials.Core.Feedback;
+using Thread = Crestron.SimplSharpPro.CrestronThread.Thread;
 
 namespace EpsonProjectorEpi
 {
@@ -252,11 +252,6 @@ namespace EpsonProjectorEpi
                 case PowerHandler.PowerStatusEnum.PowerCooling:
                     break;
                 case PowerHandler.PowerStatusEnum.PowerOff:
-                    _commandQueue.Enqueue(new Commands.EpsonCommand
-                        {
-                            Coms = _coms,
-                            Message = Commands.PowerOn,
-                        });
                     _currentPowerStatus = PowerHandler.PowerStatusEnum.PowerWarming;
                     break;
 
@@ -265,24 +260,24 @@ namespace EpsonProjectorEpi
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+
+            _commandQueue.Enqueue(new Commands.EpsonCommand
+            {
+                Coms = _coms,
+                Message = Commands.PowerOn,
+            });
         }
 
         private void ProcessRequestedPowerOff()
         {
             if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerOff)
                 throw new InvalidOperationException("Power off isn't requested");
-
+       
             switch (_currentPowerStatus)
             {
                 case PowerHandler.PowerStatusEnum.PowerOn:
-                    _commandQueue.Enqueue(new Commands.EpsonCommand
-                        {
-                            Coms = _coms,
-                            Message = Commands.PowerOff,
-                        });
                     _currentPowerStatus = PowerHandler.PowerStatusEnum.PowerCooling;
                     break;
-
                 case PowerHandler.PowerStatusEnum.PowerWarming:
                     break;
                 case PowerHandler.PowerStatusEnum.PowerCooling:
@@ -296,6 +291,12 @@ namespace EpsonProjectorEpi
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+
+            _commandQueue.Enqueue(new Commands.EpsonCommand
+            {
+                Coms = _coms,
+                Message = Commands.PowerOff,
+            });
         }
 
         private void ProcessRequestedMuteStatus()
