@@ -26,18 +26,6 @@ namespace EpsonProjectorEpi
                     if (args.BoolValue)
                         Poll();
                 };
-
-            CrestronEnvironment.ProgramStatusEventHandler += type =>
-            {
-                if (type != eProgramStatusEventType.Stopping)
-                    return;
-
-                if (_pollTimer == null)
-                    return;
-
-                _pollTimer.Stop();
-                _pollTimer.Dispose();
-            };
         }
 
         private void HandleLineReceived(object sender, GenericCommMethodReceiveTextArgs genericCommMethodReceiveTextArgs)
@@ -46,13 +34,9 @@ namespace EpsonProjectorEpi
             if (!result.Contains("LAMP="))
                 return;
 
-            _queue.Enqueue(new ProcessStringMessage(result,
-                s =>
-                    {
-                        var index = s.IndexOf("=", StringComparison.Ordinal) + 1;
-                        _lampHours = Convert.ToInt32(result.Remove(0, index));
-                        LampHoursFeedback.FireUpdate();
-                    }));
+            var index = result.IndexOf("=", StringComparison.Ordinal) + 1;
+            _lampHours = Convert.ToInt32(result.Remove(0, index));
+            LampHoursFeedback.FireUpdate();
         }
 
         private void Poll()

@@ -18,15 +18,13 @@ namespace EpsonProjectorEpi
 
         public event EventHandler<Events.VideoInputEventArgs> VideoInputUpdated;
 
-        public VideoInputHandler(string key, CommunicationGather gather)
+        public VideoInputHandler(string key)
         {
             Key = key;
-            gather.LineReceived += GatherOnLineReceived;
         }
 
-        private void GatherOnLineReceived(object sender, GenericCommMethodReceiveTextArgs genericCommMethodReceiveTextArgs)
+        public void ProcessResponse(string response)
         {
-            var response = genericCommMethodReceiveTextArgs.Text;
             if (!response.Contains(SearchString))
                 return;
 

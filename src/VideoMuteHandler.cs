@@ -16,15 +16,13 @@ namespace EpsonProjectorEpi
 
         public event EventHandler<Events.VideoMuteEventArgs> VideoMuteStatusUpdated;
 
-        public VideoMuteHandler(string key, CommunicationGather gather)
+        public VideoMuteHandler(string key)
         {
             Key = key;
-            gather.LineReceived += GatherOnLineReceived;
         }
 
-        private void GatherOnLineReceived(object sender, GenericCommMethodReceiveTextArgs genericCommMethodReceiveTextArgs)
+        public void ProcessResponse(string response)
         {
-            var response = genericCommMethodReceiveTextArgs.Text;
             if (!response.Contains(SearchString))
                 return;
 

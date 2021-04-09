@@ -36,7 +36,7 @@ namespace EpsonProjectorEpi
             CommunicationMonitor = new GenericCommunicationMonitor(this, coms, config.Monitor);
             var gather = new CommunicationGather(coms, "\x0D:");
 
-            _commandQueue = new GenericQueue(key, 213, Thread.eThreadPriority.MediumPriority, 50);
+            _commandQueue = new GenericQueue(key + "-command-queue", 213, Thread.eThreadPriority.MediumPriority, 50);
 
             InputPorts = new RoutingPortCollection<RoutingInputPort>
                 {
@@ -83,14 +83,23 @@ namespace EpsonProjectorEpi
             VideoMuteIsOff = new BoolFeedback(() => !VideoMuteIsOn.BoolValue &&
                         PowerIsOnFeedback.BoolValue);
 
-            var powerHandler = new PowerHandler(key, gather);
+            
+            var powerHandler = new PowerHandler(key);
             powerHandler.PowerStatusUpdated += HandlePowerStatusUpdated;
 
-            var muteHandler = new VideoMuteHandler(key, gather);
+            var muteHandler = new VideoMuteHandler(key);
             muteHandler.VideoMuteStatusUpdated += HandleMuteStatusUpdated;
 
-            var inputHandler = new VideoInputHandler(key, gather);
+            var inputHandler = new VideoInputHandler(key);
             inputHandler.VideoInputUpdated += HandleVideoInputUpdated;
+
+            new StringResponseProcessor(gather,
+                s =>
+                    {
+                        powerHandler.ProcessResponse(s);
+                        muteHandler.ProcessResponse(s);
+                        inputHandler.ProcessResponse(s);
+                    });
 
             LampHoursFeedback =
                 new LampHoursHandler(key, _commandQueue, gather, PowerIsOnFeedback).LampHoursFeedback;
@@ -183,8 +192,8 @@ namespace EpsonProjectorEpi
                     if (!args.BoolValue)
                         return;
 
-                    ProcessRequestedMuteStatus();
                     ProcessRequestedVideoInput();
+                    ProcessRequestedMuteStatus();
                 };
 
             CommunicationMonitor.Start();
@@ -328,7 +337,6 @@ namespace EpsonProjectorEpi
                 _currentVideoMuteStatus == VideoMuteHandler.VideoMuteStatusEnum.Muted)
             {
                 _requestedMuteStatus = VideoMuteHandler.VideoMuteStatusEnum.None;
-                return;
             }
 
             _commandQueue.Enqueue(new Commands.EpsonCommand
@@ -347,7 +355,6 @@ namespace EpsonProjectorEpi
                 _currentVideoMuteStatus == VideoMuteHandler.VideoMuteStatusEnum.Unmuted)
             {
                 _requestedMuteStatus = VideoMuteHandler.VideoMuteStatusEnum.None;
-                return;
             }
 
             _commandQueue.Enqueue(new Commands.EpsonCommand
@@ -433,6 +440,9 @@ namespace EpsonProjectorEpi
 
         public void VideoMuteOn()
         {
+            if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerOn || PowerIsOnFeedback.BoolValue)
+                return;
+
             _requestedMuteStatus = VideoMuteHandler.VideoMuteStatusEnum.Muted;
             ProcessRequestedMuteStatus();
             Feedbacks.FireAllFeedbacks();
@@ -441,6 +451,9 @@ namespace EpsonProjectorEpi
 
         public void VideoMuteOff()
         {
+            if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerOn || PowerIsOnFeedback.BoolValue)
+                return;
+
             _requestedMuteStatus = VideoMuteHandler.VideoMuteStatusEnum.Unmuted;
             ProcessRequestedMuteStatus();
             Feedbacks.FireAllFeedbacks();
