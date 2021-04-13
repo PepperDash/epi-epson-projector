@@ -440,7 +440,7 @@ namespace EpsonProjectorEpi
 
         public void VideoMuteOn()
         {
-            if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerOn || PowerIsOnFeedback.BoolValue)
+            if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerOn && !PowerIsOnFeedback.BoolValue)
                 return;
 
             _requestedMuteStatus = VideoMuteHandler.VideoMuteStatusEnum.Muted;
@@ -451,7 +451,7 @@ namespace EpsonProjectorEpi
 
         public void VideoMuteOff()
         {
-            if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerOn || PowerIsOnFeedback.BoolValue)
+            if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerOn && !PowerIsOnFeedback.BoolValue) 
                 return;
 
             _requestedMuteStatus = VideoMuteHandler.VideoMuteStatusEnum.Unmuted;
