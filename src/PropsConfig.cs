@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
-using Newtonsoft.Json;
 
-namespace EpsonProjectorEpi.Config
+namespace EpsonProjectorEpi
 {
     public class PropsConfig
     {
@@ -14,9 +14,5 @@ namespace EpsonProjectorEpi.Config
 
         public EssentialsControlPropertiesConfig Control { get; set; }
         public CommunicationMonitorConfig Monitor { get; set; }
-        public string ScreenName { get; set; }
-        public uint WarmupTime { get; set; }
-        public uint CooldownTime { get; set; }
-        public Dictionary<string, int> Inputs { get; set; }
     }
 }
