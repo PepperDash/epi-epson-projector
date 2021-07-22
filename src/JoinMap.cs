@@ -185,7 +185,19 @@ namespace EpsonProjectorEpi
                 JoinType = eJoinType.Analog,
                 Description = "Lamp Hours"
             });
-
+		[JoinName("Lens Position")]
+		public JoinDataComplete LensPositionMemory = new JoinDataComplete(
+			new JoinData()
+			{
+				JoinNumber = 5,
+				JoinSpan = 1
+			},
+			new JoinMetadata()
+			{
+				JoinCapabilities = eJoinCapabilities.FromSIMPL,
+				JoinType = eJoinType.Analog,
+				Description = "Lens Position"
+			});
         [JoinName("Input Select Offset")]
         public JoinDataComplete InputSelectOffset = new JoinDataComplete(
             new JoinData()

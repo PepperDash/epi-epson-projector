@@ -1,4 +1,5 @@
 ﻿using System;
+
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Core;
@@ -579,6 +580,17 @@ namespace EpsonProjectorEpi
 				{
 					Coms = _coms,
 					Message = message
+				});
+			}
+		}
+		public void LensPositionRecall(ushort memory)
+		{
+			if (memory > 0 && memory <= 10)
+			{
+				_commandQueue.Enqueue(new Commands.EpsonCommand
+				{
+					Coms = _coms,
+					Message = string.Format("POPLP {0}", Convert.ToByte(memory))
 				});
 			}
 		}

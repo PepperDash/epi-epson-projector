@@ -44,6 +44,7 @@ namespace EpsonProjectorEpi
             proj.LampHoursFeedback.LinkInputSig(trilist.UShortInput[joinMap.LampHours.JoinNumber]);
             proj.CurrentInputValueFeedback.LinkInputSig(trilist.UShortInput[joinMap.InputSelectOffset.JoinNumber]);
             proj.SerialNumberFeedback.LinkInputSig(trilist.StringInput[joinMap.SerialNumber.JoinNumber]);
+			trilist.SetUShortSigAction(joinMap.LensPositionMemory.JoinNumber, (i) => proj.LensPositionRecall(i));
 			trilist.SetSigHeldAction(joinMap.HShiftPlus.JoinNumber, 250, 
 				() => proj.StartLensMoveRepeat(eLensFunction.HShiftPlus),
 				() => proj.StopLensMoveRepeat(),
