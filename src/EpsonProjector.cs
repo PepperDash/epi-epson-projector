@@ -1,4 +1,5 @@
 ﻿using System;
+
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Core;
@@ -16,6 +17,7 @@ namespace EpsonProjectorEpi
         private readonly IBasicCommunication _coms;
         private readonly GenericQueue _commandQueue;
         private CTimer _pollTimer;
+		private CTimer _LensTimer; 
         private const int _pollTime = 6000;
 
         private PowerHandler.PowerStatusEnum _currentPowerStatus;
@@ -533,6 +535,65 @@ namespace EpsonProjectorEpi
             }
         }
 
+		/// <summary>
+		/// Does what it says
+		/// </summary>
+		public void StartLensMoveRepeat(eLensFunction func)
+		{
+			if (_LensTimer == null)
+			{
+				_LensTimer = new CTimer(o => LensFunction(func), null, 0, 250);
+			}
+		}
+
+		/// <summary>
+		/// Does what it says
+		/// </summary>
+		public void StopLensMoveRepeat()
+		{
+			if (_LensTimer != null)
+			{
+				_LensTimer.Stop();
+				_LensTimer = null;
+			}
+		}
+
+		public void LensFunction(eLensFunction function)
+		{
+			string message; 
+			switch (function)
+			{
+				case eLensFunction.ZoomPlus:  message = Commands.ZoomInc; break;
+				case eLensFunction.ZoomMinus: message = Commands.ZoomDec; break;
+				case eLensFunction.FocusPlus: message = Commands.FocusInc; break;
+				case eLensFunction.FocusMinus: message = Commands.FocusDec; break;
+				case eLensFunction.HShiftPlus: message = Commands.HLensInc; break;
+				case eLensFunction.HShiftMinus: message = Commands.HLensDec; break;
+				case eLensFunction.VShiftPlus: message = Commands.VLensInc; break;
+				case eLensFunction.VShiftMinus: message = Commands.VLensDec; break;
+				default: message = null; break;
+				
+			}
+			if (!string.IsNullOrEmpty(message))
+			{
+				_commandQueue.Enqueue(new Commands.EpsonCommand
+				{
+					Coms = _coms,
+					Message = message
+				});
+			}
+		}
+		public void LensPositionRecall(ushort memory)
+		{
+			if (memory > 0 && memory <= 10)
+			{
+				_commandQueue.Enqueue(new Commands.EpsonCommand
+				{
+					Coms = _coms,
+					Message = string.Format("POPLP {0}", Convert.ToByte(memory))
+				});
+			}
+		}
         public BoolFeedback PowerIsOnFeedback { get; private set; }
         public BoolFeedback PowerIsOffFeedback { get; private set; }
         public BoolFeedback VideoMuteIsOff { get; private set; }
@@ -554,4 +615,30 @@ namespace EpsonProjectorEpi
             get { return CommunicationMonitor.IsOnlineFeedback; }
         }
     }
+	public enum eLensFunction
+	{
+		ZoomPlus,
+		ZoomMinus,
+		ZoomStop,
+		FocusPlus,
+		FocusMinus,
+		FocusStop,
+		HShiftPlus,
+		HShiftMinus,
+		HShiftStop,
+		VShiftPlus,
+		VShiftMinus,
+		VShiftStop,
+		Home
+	}
+	public enum eRemoteControls
+	{
+		Menu,
+		Esc,
+		CursorUp,
+		CursorDown,
+		CursorLeft,
+		CursorRight,
+		CursorEnter
+	}
 }

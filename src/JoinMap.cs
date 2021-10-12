@@ -56,7 +56,7 @@ namespace EpsonProjectorEpi
             new JoinMetadata()
             {
                 JoinCapabilities = eJoinCapabilities.ToSIMPL,
-                JoinType = eJoinType.Digital,
+			      JoinType = eJoinType.Digital,
                 Description = "Cooling"
             });
 
@@ -64,7 +64,7 @@ namespace EpsonProjectorEpi
         public JoinDataComplete MuteOff = new JoinDataComplete(
             new JoinData()
             {
-                JoinNumber = 5,
+                JoinNumber = 21,
                 JoinSpan = 1
             },
             new JoinMetadata()
@@ -78,7 +78,7 @@ namespace EpsonProjectorEpi
         public JoinDataComplete MuteOn = new JoinDataComplete(
             new JoinData()
             {
-                JoinNumber = 6,
+                JoinNumber = 22,
                 JoinSpan = 1
             },
             new JoinMetadata()
@@ -92,7 +92,7 @@ namespace EpsonProjectorEpi
         public JoinDataComplete MuteToggle = new JoinDataComplete(
             new JoinData()
             {
-                JoinNumber = 7,
+                JoinNumber = 23,
                 JoinSpan = 1
             },
             new JoinMetadata()
@@ -185,7 +185,19 @@ namespace EpsonProjectorEpi
                 JoinType = eJoinType.Analog,
                 Description = "Lamp Hours"
             });
-
+		[JoinName("Lens Position")]
+		public JoinDataComplete LensPositionMemory = new JoinDataComplete(
+			new JoinData()
+			{
+				JoinNumber = 5,
+				JoinSpan = 1
+			},
+			new JoinMetadata()
+			{
+				JoinCapabilities = eJoinCapabilities.FromSIMPL,
+				JoinType = eJoinType.Analog,
+				Description = "Lens Position"
+			});
         [JoinName("Input Select Offset")]
         public JoinDataComplete InputSelectOffset = new JoinDataComplete(
             new JoinData()
@@ -199,6 +211,31 @@ namespace EpsonProjectorEpi
                 JoinType = eJoinType.DigitalAnalog,
                 Description = "Input Select"
             });
+		[JoinName("VShiftPlus")]
+		public JoinDataComplete VShiftPlus = new JoinDataComplete(new JoinData { JoinNumber = 40, JoinSpan = 1 },
+			new JoinMetadata { Description = "VShiftPlus", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+		[JoinName("VShiftMinus")]
+		public JoinDataComplete VShiftMinus = new JoinDataComplete(new JoinData { JoinNumber = 41, JoinSpan = 1 },
+			new JoinMetadata { Description = "VShiftMinus", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+		[JoinName("HShiftPlus")]
+		public JoinDataComplete HShiftPlus = new JoinDataComplete(new JoinData { JoinNumber = 42, JoinSpan = 1 },
+			new JoinMetadata { Description = "HShiftPlus", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+		[JoinName("HShiftMinus")]
+		public JoinDataComplete HShiftMinus = new JoinDataComplete(new JoinData { JoinNumber = 43, JoinSpan = 1 },
+			new JoinMetadata { Description = "HShiftMinus", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+		[JoinName("FocusPlus")]
+		public JoinDataComplete FocusPlus = new JoinDataComplete(new JoinData { JoinNumber = 44, JoinSpan = 1 },
+			new JoinMetadata { Description = "FocusPlus", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+		[JoinName("FocusMinus")]
+		public JoinDataComplete FocusMinus = new JoinDataComplete(new JoinData { JoinNumber = 45, JoinSpan = 1 },
+			new JoinMetadata { Description = "FocusMinus", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+		[JoinName("ZoomPlus")]
+		public JoinDataComplete ZoomPlus = new JoinDataComplete(new JoinData { JoinNumber = 46, JoinSpan = 1 },
+			new JoinMetadata { Description = "ZoomPlus", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+		[JoinName("ZoomMinus")]
+		public JoinDataComplete ZoomMinus = new JoinDataComplete(new JoinData { JoinNumber = 47, JoinSpan = 1 },
+			new JoinMetadata { Description = "ZoomMinus", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+
 
         public JoinMap(uint joinStart)
             : base(joinStart, typeof(JoinMap))

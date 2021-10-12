@@ -38,5 +38,13 @@ namespace EpsonProjectorEpi
         public const string LampPoll = "LAMP?";
         public const string MutePoll = "MUTE?";
         public const string SerialNumberPoll = "SNO?";
+		public const string FocusInc = "FOCUS INC";
+		public const string FocusDec = "FOCUS DEC";
+		public const string ZoomInc = "ZOOM INC";
+		public const string ZoomDec = "ZOOM DEC";
+		public const string HLensInc = "HLENS INC 10";
+		public const string HLensDec = "HLENS DEC 10";
+		public const string VLensInc = "LENS INC 10";
+		public const string VLensDec = "LENS DEC 10";
     }
 }
