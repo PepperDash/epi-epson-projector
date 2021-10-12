@@ -631,4 +631,14 @@ namespace EpsonProjectorEpi
 		VShiftStop,
 		Home
 	}
+	public enum eRemoteControls
+	{
+		Menu,
+		Esc,
+		CursorUp,
+		CursorDown,
+		CursorLeft,
+		CursorRight,
+		CursorEnter
+	}
 }
