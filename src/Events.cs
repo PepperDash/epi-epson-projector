@@ -14,6 +14,11 @@ namespace EpsonProjectorEpi
             public VideoMuteHandler.VideoMuteStatusEnum Status { get; set; }
         }
 
+        public class VideoFreezeEventArgs : EventArgs
+        {
+            public VideoFreezeHandler.VideoFreezeStatusEnum Status { get; set; }
+        }
+
         public class VideoInputEventArgs : EventArgs
         {
             public VideoInputHandler.VideoInputStatusEnum Input { get; set; }
