@@ -21,6 +21,9 @@ namespace EpsonProjectorEpi
             trilist.SetSigTrueAction(joinMap.MuteOn.JoinNumber, proj.VideoMuteOn);
             trilist.SetSigTrueAction(joinMap.MuteOff.JoinNumber, proj.VideoMuteOff);
             trilist.SetSigTrueAction(joinMap.MuteToggle.JoinNumber, proj.VideoMuteToggle);
+            trilist.SetSigTrueAction(joinMap.FreezeOn.JoinNumber, proj.VideoFreezeOn);
+            trilist.SetSigTrueAction(joinMap.FreezeOff.JoinNumber, proj.VideoFreezeOff);
+            trilist.SetSigTrueAction(joinMap.FreezeToggle.JoinNumber, proj.VideoFreezeToggle);
             trilist.SetUShortSigAction(joinMap.InputSelectOffset.JoinNumber,
                 value =>
                     {
@@ -40,6 +43,8 @@ namespace EpsonProjectorEpi
             proj.IsCoolingDownFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Cooling.JoinNumber]);
             proj.VideoMuteIsOn.LinkInputSig(trilist.BooleanInput[joinMap.MuteOn.JoinNumber]);
             proj.VideoMuteIsOff.LinkInputSig(trilist.BooleanInput[joinMap.MuteOff.JoinNumber]);
+            proj.VideoFreezeIsOn.LinkInputSig(trilist.BooleanInput[joinMap.FreezeOn.JoinNumber]);
+            proj.VideoFreezeIsOff.LinkInputSig(trilist.BooleanInput[joinMap.FreezeOff.JoinNumber]);
             proj.IsOnline.LinkInputSig(trilist.BooleanInput[joinMap.IsOnline.JoinNumber]);
             proj.LampHoursFeedback.LinkInputSig(trilist.UShortInput[joinMap.LampHours.JoinNumber]);
             proj.CurrentInputValueFeedback.LinkInputSig(trilist.UShortInput[joinMap.InputSelectOffset.JoinNumber]);

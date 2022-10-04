@@ -211,7 +211,48 @@ namespace EpsonProjectorEpi
                 JoinType = eJoinType.DigitalAnalog,
                 Description = "Input Select"
             });
-		[JoinName("VShiftPlus")]
+        [JoinName("Freeze Off")]
+        public JoinDataComplete FreezeOff = new JoinDataComplete(
+            new JoinData()
+            {
+                JoinNumber = 29,
+                JoinSpan = 1
+            },
+            new JoinMetadata()
+            {
+                JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                JoinType = eJoinType.Digital,
+                Description = "Freeze Off"
+            });
+
+        [JoinName("Freeze On")]
+        public JoinDataComplete FreezeOn = new JoinDataComplete(
+            new JoinData()
+            {
+                JoinNumber = 30,
+                JoinSpan = 1
+            },
+            new JoinMetadata()
+            {
+                JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                JoinType = eJoinType.Digital,
+                Description = "Freeze On"
+            });
+
+        [JoinName("Freeze Toggle")]
+        public JoinDataComplete FreezeToggle = new JoinDataComplete(
+            new JoinData()
+            {
+                JoinNumber = 37,
+                JoinSpan = 1
+            },
+            new JoinMetadata()
+            {
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Digital,
+                Description = "Freeze Toggle"
+            });
+        [JoinName("VShiftPlus")]
 		public JoinDataComplete VShiftPlus = new JoinDataComplete(new JoinData { JoinNumber = 40, JoinSpan = 1 },
 			new JoinMetadata { Description = "VShiftPlus", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
 		[JoinName("VShiftMinus")]
