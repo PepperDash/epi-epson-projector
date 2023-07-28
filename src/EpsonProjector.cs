@@ -34,7 +34,15 @@ namespace EpsonProjectorEpi
                 config.Monitor = GetDefaultMonitorConfig();
 
             CommunicationMonitor = new GenericCommunicationMonitor(this, coms, config.Monitor);
+            CommunicationMonitor.Stop();
             var gather = new CommunicationGather(coms, "\x0D:");
+
+            var socket = coms as ISocketStatus;
+            if (socket != null)
+            {
+                // This instance uses IP control
+                socket.ConnectionChange += socket_ConnectionChange;
+            }
 
             _commandQueue = new GenericQueue(key + "-command-queue", 213, Thread.eThreadPriority.MediumPriority, 50);
 
@@ -144,6 +152,25 @@ namespace EpsonProjectorEpi
                 };
         }
 
+        private void socket_ConnectionChange(object sender, GenericSocketStatusChageEventArgs e)
+        {
+            if (e.Client.IsConnected)
+            {
+                Debug.Console(2, this, "Connected, sending ESCVPnet Command");
+                var cmd = new byte[] {0x45, 0x53, 0x43, 0x2F, 0x56, 0x50, 0x2E, 0x6E, 0x65, 0x74, 0x10, 0x03, 0x00, 0x00, 0x00, 0x00};
+                _coms.SendBytes(cmd);
+                _pollTimer.Reset(329, _pollTime);
+                CommunicationMonitor.Start();
+            }
+            else
+            {
+                Debug.Console(2, this, "Disconnected");
+                _pollTimer.Stop();
+                CommunicationMonitor.Stop();
+            }
+
+        }
+
         private static CommunicationMonitorConfig GetDefaultMonitorConfig()
         {
             return new CommunicationMonitorConfig()
@@ -157,9 +184,12 @@ namespace EpsonProjectorEpi
 
         public override bool CustomActivate()
         {
+            if (_coms != null)
+                _coms.Connect();
+
             Feedbacks.RegisterForConsoleUpdates(this);
             Feedbacks.FireAllFeedbacks();
-
+            
             _pollTimer = new CTimer(o =>
                 {
                     _commandQueue.Enqueue(new Commands.EpsonCommand
@@ -195,8 +225,11 @@ namespace EpsonProjectorEpi
                     ProcessRequestedVideoInput();
                     ProcessRequestedMuteStatus();
                 };
-
-            CommunicationMonitor.Start();
+            var socket = _coms as ISocketStatus;
+            if (socket == null)
+            {
+                CommunicationMonitor.Start();
+            }
             return base.CustomActivate();
         }
 
