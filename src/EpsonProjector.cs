@@ -217,6 +217,14 @@ namespace EpsonProjectorEpi
                 5189,
                 _pollTime);
 
+            IsWarmingUpFeedback.OutputChange += (sender, args) =>
+            {
+                if (!args.BoolValue)
+                    return;
+
+                ProcessRequestedMuteStatus();
+            };
+
             PowerIsOnFeedback.OutputChange += (sender, args) =>
                 {
                     if (!args.BoolValue)
@@ -294,7 +302,7 @@ namespace EpsonProjectorEpi
                 case PowerHandler.PowerStatusEnum.PowerCooling:
                     break;
                 case PowerHandler.PowerStatusEnum.PowerOff:
-                    _currentPowerStatus = PowerHandler.PowerStatusEnum.PowerWarming;
+                    //_currentPowerStatus = PowerHandler.PowerStatusEnum.PowerWarming;
                     break;
 
                 case PowerHandler.PowerStatusEnum.None:
@@ -343,7 +351,7 @@ namespace EpsonProjectorEpi
 
         private void ProcessRequestedMuteStatus()
         {
-            if (!PowerIsOnFeedback.BoolValue)
+            if (!PowerIsOnFeedback.BoolValue && !IsWarmingUpFeedback.BoolValue)
                 return;
 
             switch (_requestedMuteStatus)
@@ -473,7 +481,7 @@ namespace EpsonProjectorEpi
 
         public void VideoMuteOn()
         {
-            if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerOn && !PowerIsOnFeedback.BoolValue)
+            if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerOn && !PowerIsOnFeedback.BoolValue && _requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerWarming && !IsWarmingUpFeedback.BoolValue)
                 return;
 
             _requestedMuteStatus = VideoMuteHandler.VideoMuteStatusEnum.Muted;
@@ -484,7 +492,7 @@ namespace EpsonProjectorEpi
 
         public void VideoMuteOff()
         {
-            if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerOn && !PowerIsOnFeedback.BoolValue) 
+            if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerOn && !PowerIsOnFeedback.BoolValue || !VideoMuteIsOn.BoolValue) 
                 return;
 
             _requestedMuteStatus = VideoMuteHandler.VideoMuteStatusEnum.Unmuted;
