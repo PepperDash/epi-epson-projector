@@ -18,9 +18,15 @@ namespace EpsonProjectorEpi
 
             trilist.SetSigTrueAction(joinMap.PowerOn.JoinNumber, proj.PowerOn);
             trilist.SetSigTrueAction(joinMap.PowerOff.JoinNumber, proj.PowerOff);
+
             trilist.SetSigTrueAction(joinMap.MuteOn.JoinNumber, proj.VideoMuteOn);
             trilist.SetSigTrueAction(joinMap.MuteOff.JoinNumber, proj.VideoMuteOff);
             trilist.SetSigTrueAction(joinMap.MuteToggle.JoinNumber, proj.VideoMuteToggle);
+
+            trilist.SetSigTrueAction(joinMap.MuteOnLegacy.JoinNumber, proj.VideoMuteOn);
+            trilist.SetSigTrueAction(joinMap.MuteOffLegacy.JoinNumber, proj.VideoMuteOff);
+            trilist.SetSigTrueAction(joinMap.MuteToggleLegacy.JoinNumber, proj.VideoMuteToggle);
+
             trilist.SetUShortSigAction(joinMap.InputSelectOffset.JoinNumber,
                 value =>
                     {
@@ -38,9 +44,15 @@ namespace EpsonProjectorEpi
             proj.PowerIsOnFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PowerOn.JoinNumber]);
             proj.IsWarmingUpFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Warming.JoinNumber]);
             proj.IsCoolingDownFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Cooling.JoinNumber]);
+
             proj.VideoMuteIsOn.LinkInputSig(trilist.BooleanInput[joinMap.MuteOn.JoinNumber]);
             proj.VideoMuteIsOff.LinkInputSig(trilist.BooleanInput[joinMap.MuteOff.JoinNumber]);
+            
+            proj.VideoMuteIsOn.LinkInputSig(trilist.BooleanInput[joinMap.MuteOnLegacy.JoinNumber]);
+            proj.VideoMuteIsOff.LinkInputSig(trilist.BooleanInput[joinMap.MuteOffLegacy.JoinNumber]);
+            
             proj.IsOnline.LinkInputSig(trilist.BooleanInput[joinMap.IsOnline.JoinNumber]);
+            
             proj.LampHoursFeedback.LinkInputSig(trilist.UShortInput[joinMap.LampHours.JoinNumber]);
             proj.CurrentInputValueFeedback.LinkInputSig(trilist.UShortInput[joinMap.InputSelectOffset.JoinNumber]);
             proj.SerialNumberFeedback.LinkInputSig(trilist.StringInput[joinMap.SerialNumber.JoinNumber]);
