@@ -4,11 +4,15 @@ on:
   push:
     branches:
       - '**'
-      
   workflow_dispatch:
+    inputs:
+      target-branch:
+        description: 'The branch to commit the README.md updates to.'
+        required: true
+        default: 'robotdocs'
 
 jobs:
   call-update-readme:
     uses: PepperDash/readme-automation/.github/workflows/update-readme.yml@main
     with:
-      target-branch: 'robotdocs'
+      target-branch: ${{ github.event.inputs.target-branch }}
