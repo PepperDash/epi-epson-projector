@@ -59,9 +59,40 @@
     "properties": {
         "Control": "SampleValue",
         "Monitor": "SampleValue",
-        "EnableBridgeComms": true
+        "EnableBridgeComms": true,
+        "TestNewConfigValue": true
     }
 }
 ```
 <!-- END Config Example -->
 
+<!-- START Interfaces Implemented -->
+### Interfaces Implemented
+
+- IKeyed
+- IQueueMessage
+- IRoutingSinkWithSwitching
+- IHasPowerControlWithFeedback
+- IWarmingCooling
+- IOnline
+- IBasicVideoMuteWithFeedback
+- ICommunicationMonitor
+- IHasFeedback
+<!-- END Interfaces Implemented -->
+<!-- START Base Classes -->
+### Base Classes
+
+- JoinMapBaseAdvanced
+- EventArgs
+- EssentialsBridgeableDevice
+<!-- END Base Classes -->
+<!-- START Supported Types -->
+### Supported Types
+
+- epsonProjector
+<!-- END Supported Types -->
+<!-- START Minimum Essentials Framework Versions -->
+### Minimum Essentials Framework Versions
+
+- 1.8.1
+<!-- END Minimum Essentials Framework Versions -->
