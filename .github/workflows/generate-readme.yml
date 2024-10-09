@@ -1,14 +1,13 @@
-name: Generate README
+name: Caller Workflow
 
-on: workflow_dispatch
+on:
+  push:
+    branches:
+      - main  # Change this to the branch you want to trigger the workflow on
+  workflow_dispatch:
 
 jobs:
-  generate-readme:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
-      - name: Run README Update Script
-        run: echo "This is a test."
+  call-update-readme:
+    uses: PepperDash/readme-automation/.github/workflows/update-readme.yml@main
+    with:
+      target-branch: 'robotdocs'
