@@ -1,4 +1,4 @@
-name: Caller Workflow
+name: Generate README
 
 on:
   push:
