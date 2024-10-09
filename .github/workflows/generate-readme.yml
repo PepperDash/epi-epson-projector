@@ -16,5 +16,3 @@ jobs:
     uses: PepperDash/readme-automation/.github/workflows/update-readme.yml@main
     with:
       target-branch: ${{ github.event.inputs.target-branch }}
-
-      
