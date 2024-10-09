@@ -3,7 +3,8 @@ name: Caller Workflow
 on:
   push:
     branches:
-      - main  # Change this to the branch you want to trigger the workflow on
+      - '**'
+      
   workflow_dispatch:
 
 jobs:
