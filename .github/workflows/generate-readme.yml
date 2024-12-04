@@ -8,6 +8,6 @@ on:
 
 jobs:
   call-update-readme:
-    uses: PepperDash/PepperDash/workflow-templates/.github/workflows/update-readme.yml@add-feedboacks
+    uses: PepperDash/workflow-templates/.github/workflows/update-readme.yml@add-feedbacks
     with:
       target-branch: ${{ github.ref_name }}
