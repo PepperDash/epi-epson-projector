@@ -2,12 +2,12 @@ name: Generate README
 
 on:
   push:
-    branches:
-      - '**'
+    branches-ignore:
+      - 'robot-docs'
   workflow_dispatch:
 
 jobs:
   call-update-readme:
-    uses: PepperDash/readme-automation/.github/workflows/update-readme.yml@main
+    uses: PepperDash/PepperDash/workflow-templates/.github/workflows/update-readme.yml@add-feedboacks
     with:
       target-branch: ${{ github.ref_name }}
