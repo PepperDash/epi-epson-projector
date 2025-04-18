@@ -64,7 +64,7 @@ namespace EpsonProjectorEpi
         public JoinDataComplete MuteOff = new JoinDataComplete(
             new JoinData()
             {
-                JoinNumber = 5,
+                JoinNumber = 21,
                 JoinSpan = 1
             },
             new JoinMetadata()
@@ -78,7 +78,7 @@ namespace EpsonProjectorEpi
         public JoinDataComplete MuteOn = new JoinDataComplete(
             new JoinData()
             {
-                JoinNumber = 6,
+                JoinNumber = 22,
                 JoinSpan = 1
             },
             new JoinMetadata()
@@ -92,7 +92,7 @@ namespace EpsonProjectorEpi
         public JoinDataComplete MuteToggle = new JoinDataComplete(
             new JoinData()
             {
-                JoinNumber = 7,
+                JoinNumber = 23,
                 JoinSpan = 1
             },
             new JoinMetadata()
