@@ -36,7 +36,7 @@ namespace EpsonProjectorEpi
         public JoinDataComplete Warming = new JoinDataComplete(
             new JoinData()
             {
-                JoinNumber = 11,
+                JoinNumber = 9,
                 JoinSpan = 1
             },
             new JoinMetadata()
@@ -50,7 +50,7 @@ namespace EpsonProjectorEpi
         public JoinDataComplete Cooling = new JoinDataComplete(
             new JoinData()
             {
-                JoinNumber = 12,
+                JoinNumber = 10,
                 JoinSpan = 1
             },
             new JoinMetadata()
