@@ -79,7 +79,7 @@ namespace EpsonProjectorEpi
             muteHandler.VideoMuteStatusUpdated += HandleMuteStatusUpdated;
 
             var inputHandler = new VideoInputHandler(key);
-            //inputHandler.VideoInputUpdated += HandleVideoInputUpdated;
+            inputHandler.VideoInputUpdated += HandleVideoInputUpdated;
 
             new StringResponseProcessor(gather,
                 s =>
