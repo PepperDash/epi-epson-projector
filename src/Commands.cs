@@ -31,12 +31,15 @@ namespace EpsonProjectorEpi
         public const string SourceDvi = "SOURCE A0";
         public const string MuteOn = "MUTE ON";
         public const string MuteOff = "MUTE OFF";
+        public const string FreezeOn = "FREEZE ON";
+        public const string FreezeOff = "FREEZE OFF";
         public const string PowerOn = "PWR ON";
         public const string PowerOff = "PWR OFF";
         public const string PowerPoll = "PWR?";
         public const string SourcePoll = "SOURCE?";
         public const string LampPoll = "LAMP?";
         public const string MutePoll = "MUTE?";
+        public const string FreezePoll = "FREEZE?";
         public const string SerialNumberPoll = "SNO?";
 		public const string FocusInc = "FOCUS INC";
 		public const string FocusDec = "FOCUS DEC";
