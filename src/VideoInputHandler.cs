@@ -1,6 +1,5 @@
 ﻿using System;
 using PepperDash.Core;
-using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 namespace EpsonProjectorEpi
 {

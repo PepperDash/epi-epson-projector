@@ -1,18 +1,14 @@
 ﻿using System;
 
 using Crestron.SimplSharp;
-using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
-using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Essentials.Core.Queues;
 using Feedback = PepperDash.Essentials.Core.Feedback;
 using Thread = Crestron.SimplSharpPro.CrestronThread.Thread;
-using PepperDash.Essentials.Devices.Displays;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using System.Collections.Generic;
-using PepperDash.Essentials.AppServer.Messengers;
-using static Org.BouncyCastle.Math.EC.ECCurve;
+
 
 namespace EpsonProjectorEpi
 {
