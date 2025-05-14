@@ -50,33 +50,7 @@ namespace EpsonProjectorEpi
             _commandQueue = new GenericQueue(key + "-command-queue", 213, Thread.eThreadPriority.MediumPriority, 50);
 
             SetupInputs();
-            /*InputPorts = new RoutingPortCollection<RoutingInputPort>
-                {
-                    new RoutingInputPort("Hdmi",
-                        eRoutingSignalType.Video,
-                        eRoutingPortConnectionType.Hdmi,
-                        VideoInputHandler.VideoInputStatusEnum.Hdmi,
-                        this) {Port = (int) VideoInputHandler.VideoInputStatusEnum.Hdmi},
-                    new RoutingInputPort("DVI",
-                        eRoutingSignalType.Video,
-                        eRoutingPortConnectionType.Dvi,
-                        VideoInputHandler.VideoInputStatusEnum.Dvi,
-                        this) {Port = (int) VideoInputHandler.VideoInputStatusEnum.Dvi},
-                    new RoutingInputPort("Computer",
-                        eRoutingSignalType.Video,
-                        eRoutingPortConnectionType.Vga,
-                        VideoInputHandler.VideoInputStatusEnum.Computer,
-                        this) {Port = (int) VideoInputHandler.VideoInputStatusEnum.Computer},
-                    new RoutingInputPort("Video",
-                        eRoutingSignalType.Video,
-                        eRoutingPortConnectionType.Rgb,
-                        VideoInputHandler.VideoInputStatusEnum.Video,
-                        this) {Port = (int) VideoInputHandler.VideoInputStatusEnum.Video},
-                };*/
-
-            
-
-
+               
             PowerIsOnFeedback =
                 new BoolFeedback("PowerIsOn", () => _currentPowerStatus == PowerHandler.PowerStatusEnum.PowerOn);
 
@@ -656,13 +630,13 @@ namespace EpsonProjectorEpi
             }
         }
 
-        protected override Func<string> CurrentInputFeedbackFunc => throw new NotImplementedException();
+        protected override Func<string> CurrentInputFeedbackFunc => () => CurrentInputValueFeedback.IntValue.ToString();
 
-        protected override Func<bool> PowerIsOnFeedbackFunc => throw new NotImplementedException();
+        protected override Func<bool> PowerIsOnFeedbackFunc => () => PowerIsOnFeedback.BoolValue;
 
-        protected override Func<bool> IsCoolingDownFeedbackFunc => throw new NotImplementedException();
+        protected override Func<bool> IsCoolingDownFeedbackFunc => () => IsCoolingDownFeedback.BoolValue;
 
-        protected override Func<bool> IsWarmingUpFeedbackFunc => throw new NotImplementedException();
+        protected override Func<bool> IsWarmingUpFeedbackFunc => () => IsWarmingUpFeedback.BoolValue;
     }
     public enum eLensFunction
 	{
