@@ -29,6 +29,9 @@ namespace EpsonProjectorEpi
         private VideoMuteHandler.VideoMuteStatusEnum _currentVideoMuteStatus;
         private VideoMuteHandler.VideoMuteStatusEnum _requestedMuteStatus;
 
+        private VideoFreezeHandler.VideoFreezeStatusEnum _currentVideoFreezeStatus;
+        private VideoFreezeHandler.VideoFreezeStatusEnum _requestedFreezeStatus;
+
         private VideoInputHandler.VideoInputStatusEnum _currentVideoInput;
         private VideoInputHandler.VideoInputStatusEnum _requestedVideoInput;
 
@@ -64,20 +67,25 @@ namespace EpsonProjectorEpi
                 new BoolFeedback(() => _currentPowerStatus == PowerHandler.PowerStatusEnum.PowerOff);
 
             VideoMuteIsOn =
-                new BoolFeedback("VideoMuteIsOn",
-                    () =>
-                        _currentVideoMuteStatus == VideoMuteHandler.VideoMuteStatusEnum.Muted &&
-                        PowerIsOnFeedback.BoolValue);
+                new BoolFeedback("VideoMuteIsOn", () => _currentVideoMuteStatus == VideoMuteHandler.VideoMuteStatusEnum.Muted && PowerIsOnFeedback.BoolValue);
 
-            VideoMuteIsOff = new BoolFeedback(() => !VideoMuteIsOn.BoolValue &&
-                        PowerIsOnFeedback.BoolValue);
+            VideoMuteIsOff =
+                new BoolFeedback(() => !VideoMuteIsOn.BoolValue && PowerIsOnFeedback.BoolValue);
 
-            
+            VideoFreezeIsOn =
+                new BoolFeedback("VideoFreezeIsOn", () => _currentVideoFreezeStatus == VideoFreezeHandler.VideoFreezeStatusEnum.Frozen && PowerIsOnFeedback.BoolValue);
+
+            VideoFreezeIsOff =
+                new BoolFeedback(() => !VideoFreezeIsOn.BoolValue && PowerIsOnFeedback.BoolValue);
+
             var powerHandler = new PowerHandler(key);
             powerHandler.PowerStatusUpdated += HandlePowerStatusUpdated;
 
             var muteHandler = new VideoMuteHandler(key);
             muteHandler.VideoMuteStatusUpdated += HandleMuteStatusUpdated;
+
+            var freezeHandler = new VideoFreezeHandler(key);
+            freezeHandler.VideoFreezeStatusUpdated += HandleFreezeStatusUpdated;
 
             var inputHandler = new VideoInputHandler(key);
             inputHandler.VideoInputUpdated += HandleVideoInputUpdated;
@@ -87,6 +95,7 @@ namespace EpsonProjectorEpi
                     {
                         powerHandler.ProcessResponse(s);
                         muteHandler.ProcessResponse(s);
+                        freezeHandler.ProcessResponse(s);
                         inputHandler.ProcessResponse(s);
                     });
 
@@ -114,9 +123,12 @@ namespace EpsonProjectorEpi
                     PowerIsOffFeedback,
                     VideoMuteIsOn,
                     VideoMuteIsOff,
+                    VideoFreezeIsOn,
+                    VideoFreezeIsOff,
                     CurrentInputValueFeedback,
                     new StringFeedback("RequestedPower", () => _requestedPowerStatus.ToString()),
                     new StringFeedback("RequestedMute", () => _requestedMuteStatus.ToString()),
+                    new StringFeedback("RequestedFreeze", () => _requestedFreezeStatus.ToString()),
                     new StringFeedback("RequestedInput", () => _requestedVideoInput.ToString()),
                 };
 
@@ -207,28 +219,89 @@ namespace EpsonProjectorEpi
                                         Message = Commands.SourcePoll,
                                     });
 
-                                _commandQueue.Enqueue(new Commands.EpsonCommand
-                                    {
-                                        Coms = _coms,
-                                        Message = Commands.MutePoll,
-                                    });
-                            },
-                            null,
-                            5189,
-                            _pollTime);
+                    _commandQueue.Enqueue(new Commands.EpsonCommand
+                    {
+                        Coms = _coms,
+                        Message = Commands.MutePoll,
+                    });
+
+                    _commandQueue.Enqueue(new Commands.EpsonCommand
+                    {
+                        Coms = _coms,
+                        Message = Commands.FreezePoll,
+                    });
+                },
+                null,
+                5189,
+                _pollTime);
 
                         PowerIsOnFeedback.OutputChange += (sender, args) =>
                             {
                                 if (!args.BoolValue)
                                     return;
 
-                                ProcessRequestedVideoInput();
-                                ProcessRequestedMuteStatus();
-                            };
+                    ProcessRequestedVideoInput();
+                    ProcessRequestedMuteStatus();
+                    ProcessRequestedFreezeStatus();
+                };
 
-                        CommunicationMonitor.Start();
-                        return base.CustomActivate();
-                    }
+            CommunicationMonitor.Start();
+            return base.CustomActivate();
+        }
+
+        public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
+        {
+            var joinMap = new JoinMap(joinStart);
+            if (bridge != null)
+                bridge.AddJoinMap(Key, joinMap);
+
+            Bridge.LinkToApi(this, trilist, joinMap);
+        }
+
+        private void HandlePowerStatusUpdated(object sender, Events.PowerEventArgs eventArgs)
+        {
+            _currentPowerStatus = eventArgs.Status;
+            ProcessRequestedPowerStatus();
+            Feedbacks.FireAllFeedbacks();
+        }
+
+        private void HandleMuteStatusUpdated(object sender, Events.VideoMuteEventArgs videoMuteEventArgs)
+        {
+            _currentVideoMuteStatus = videoMuteEventArgs.Status;
+
+            ProcessRequestedMuteStatus();
+            Feedbacks.FireAllFeedbacks();
+        }
+
+        private void HandleFreezeStatusUpdated(object sender, Events.VideoFreezeEventArgs videoFreezeEventArgs)
+        {
+            _currentVideoFreezeStatus = videoFreezeEventArgs.Status;
+
+            ProcessRequestedFreezeStatus();
+            Feedbacks.FireAllFeedbacks();
+        }
+
+        private void ProcessRequestedPowerStatus()
+        {
+            switch (_requestedPowerStatus)
+            {
+                case PowerHandler.PowerStatusEnum.PowerOn:
+                    ProcessRequestedPowerOn();
+                    break;
+                case PowerHandler.PowerStatusEnum.PowerWarming:
+                    break;
+                case PowerHandler.PowerStatusEnum.PowerCooling:
+                    break;
+                case PowerHandler.PowerStatusEnum.PowerOff:
+                    ProcessRequestedPowerOff();
+                    break;
+                case PowerHandler.PowerStatusEnum.None:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
         private void ProcessRequestedPowerOn()
         {
             if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerOn)
@@ -324,10 +397,10 @@ namespace EpsonProjectorEpi
             }
 
             _commandQueue.Enqueue(new Commands.EpsonCommand
-                {
-                    Coms = _coms,
-                    Message = Commands.MuteOn,
-                });
+            {
+                Coms = _coms,
+                Message = Commands.MuteOn,
+            });
         }
 
         private void ProcessRequestedMuteOffStatus()
@@ -342,9 +415,121 @@ namespace EpsonProjectorEpi
             }
 
             _commandQueue.Enqueue(new Commands.EpsonCommand
-                {
-                    Coms = _coms,
-                    Message = Commands.MuteOff,
+            {
+                Coms = _coms,
+                Message = Commands.MuteOff,
+            });
+        }
+
+        private void ProcessRequestedFreezeStatus()
+        {
+            if (!PowerIsOnFeedback.BoolValue)
+                return;
+
+            switch (_requestedFreezeStatus)
+            {
+                case VideoFreezeHandler.VideoFreezeStatusEnum.Frozen:
+                    ProcessRequestedFreezeOnStatus();
+                    break;
+                case VideoFreezeHandler.VideoFreezeStatusEnum.Unfrozen:
+                    ProcessRequestedFreezeOffStatus();
+                    break;
+                case VideoFreezeHandler.VideoFreezeStatusEnum.None:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private void ProcessRequestedFreezeOnStatus()
+        {
+            if (_requestedFreezeStatus != VideoFreezeHandler.VideoFreezeStatusEnum.Frozen)
+                throw new InvalidOperationException("Freeze on isn't requested");
+
+            if (_requestedFreezeStatus == VideoFreezeHandler.VideoFreezeStatusEnum.None ||
+                _currentVideoFreezeStatus == VideoFreezeHandler.VideoFreezeStatusEnum.Frozen)
+            {
+                _requestedFreezeStatus = VideoFreezeHandler.VideoFreezeStatusEnum.None;
+            }
+
+            _commandQueue.Enqueue(new Commands.EpsonCommand
+            {
+                Coms = _coms,
+                Message = Commands.FreezeOn,
+            });
+        }
+
+        private void ProcessRequestedFreezeOffStatus()
+        {
+            if (_requestedFreezeStatus != VideoFreezeHandler.VideoFreezeStatusEnum.Unfrozen)
+                throw new InvalidOperationException("Freeze off isn't requested");
+
+            if (_requestedFreezeStatus == VideoFreezeHandler.VideoFreezeStatusEnum.None ||
+                _currentVideoFreezeStatus == VideoFreezeHandler.VideoFreezeStatusEnum.Unfrozen)
+            {
+                _requestedFreezeStatus = VideoFreezeHandler.VideoFreezeStatusEnum.None;
+            }
+
+            _commandQueue.Enqueue(new Commands.EpsonCommand
+            {
+                Coms = _coms,
+                Message = Commands.FreezeOff,
+            });
+        }
+
+        private void ProcessRequestedFreezeStatus()
+        {
+            if (!PowerIsOnFeedback.BoolValue)
+                return;
+
+            switch (_requestedFreezeStatus)
+            {
+                case VideoFreezeHandler.VideoFreezeStatusEnum.Frozen:
+                    ProcessRequestedFreezeOnStatus();
+                    break;
+                case VideoFreezeHandler.VideoFreezeStatusEnum.Unfrozen:
+                    ProcessRequestedFreezeOffStatus();
+                    break;
+                case VideoFreezeHandler.VideoFreezeStatusEnum.None:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private void ProcessRequestedFreezeOnStatus()
+        {
+            if (_requestedFreezeStatus != VideoFreezeHandler.VideoFreezeStatusEnum.Frozen)
+                throw new InvalidOperationException("Freeze on isn't requested");
+
+            if (_requestedFreezeStatus == VideoFreezeHandler.VideoFreezeStatusEnum.None ||
+                _currentVideoFreezeStatus == VideoFreezeHandler.VideoFreezeStatusEnum.Frozen)
+            {
+                _requestedFreezeStatus = VideoFreezeHandler.VideoFreezeStatusEnum.None;
+            }
+
+            _commandQueue.Enqueue(new Commands.EpsonCommand
+            {
+                Coms = _coms,
+                Message = Commands.FreezeOn,
+            });
+        }
+
+        private void ProcessRequestedFreezeOffStatus()
+        {
+            if (_requestedFreezeStatus != VideoFreezeHandler.VideoFreezeStatusEnum.Unfrozen)
+                throw new InvalidOperationException("Freeze off isn't requested");
+
+            if (_requestedFreezeStatus == VideoFreezeHandler.VideoFreezeStatusEnum.None ||
+                _currentVideoFreezeStatus == VideoFreezeHandler.VideoFreezeStatusEnum.Unfrozen)
+            {
+                _requestedFreezeStatus = VideoFreezeHandler.VideoFreezeStatusEnum.None;
+            }
+
+            _commandQueue.Enqueue(new Commands.EpsonCommand
+            {
+                Coms = _coms,
+                Message = Commands.FreezeOff,
             });
         }
 
@@ -505,7 +690,7 @@ namespace EpsonProjectorEpi
 
         public void VideoMuteOff()
         {
-            if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerOn && !PowerIsOnFeedback.BoolValue) 
+            if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerOn && !PowerIsOnFeedback.BoolValue)
                 return;
 
             _requestedMuteStatus = VideoMuteHandler.VideoMuteStatusEnum.Unmuted;
@@ -515,6 +700,48 @@ namespace EpsonProjectorEpi
         }
 
         public BoolFeedback VideoMuteIsOn { get; private set; }
+
+        public void VideoFreezeToggle()
+        {
+            switch (_currentVideoFreezeStatus)
+            {
+                case VideoFreezeHandler.VideoFreezeStatusEnum.Frozen:
+                    VideoFreezeOff();
+                    break;
+                case VideoFreezeHandler.VideoFreezeStatusEnum.Unfrozen:
+                    VideoFreezeOn();
+                    break;
+                case VideoFreezeHandler.VideoFreezeStatusEnum.None:
+                    VideoFreezeOn();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public void VideoFreezeOn()
+        {
+            if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerOn && !PowerIsOnFeedback.BoolValue)
+                return;
+
+            _requestedFreezeStatus = VideoFreezeHandler.VideoFreezeStatusEnum.Frozen;
+            ProcessRequestedFreezeStatus();
+            Feedbacks.FireAllFeedbacks();
+            _pollTimer.Reset(329, _pollTime);
+        }
+
+        public void VideoFreezeOff()
+        {
+            if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerOn && !PowerIsOnFeedback.BoolValue)
+                return;
+
+            _requestedFreezeStatus = VideoFreezeHandler.VideoFreezeStatusEnum.Unfrozen;
+            ProcessRequestedFreezeStatus();
+            Feedbacks.FireAllFeedbacks();
+            _pollTimer.Reset(329, _pollTime);
+        }
+
+        public BoolFeedback VideoFreezeIsOn { get; private set; }
 
         public override void PowerOn()
         {
@@ -528,6 +755,7 @@ namespace EpsonProjectorEpi
         {
             _requestedPowerStatus = PowerHandler.PowerStatusEnum.PowerOff;
             _requestedMuteStatus = VideoMuteHandler.VideoMuteStatusEnum.None;
+            _requestedFreezeStatus = VideoFreezeHandler.VideoFreezeStatusEnum.None;
             _requestedVideoInput = VideoInputHandler.VideoInputStatusEnum.None;
 
             ProcessRequestedPowerStatus();
@@ -574,6 +802,7 @@ namespace EpsonProjectorEpi
 
                 PowerOn();
                 VideoMuteOff();
+                VideoFreezeOff();
                 ProcessRequestedVideoInput();
                 _pollTimer.Reset(438, _pollTime);
             }
@@ -656,6 +885,7 @@ namespace EpsonProjectorEpi
         public BoolFeedback PowerIsOnFeedback { get; private set; }
         public BoolFeedback PowerIsOffFeedback { get; private set; }
         public BoolFeedback VideoMuteIsOff { get; private set; }
+        public BoolFeedback VideoFreezeIsOff { get; private set; }
         public StatusMonitorBase CommunicationMonitor { get; private set; }
         public BoolFeedback IsWarmingUpFeedback { get; private set; }
         public BoolFeedback IsCoolingDownFeedback { get; private set; }
