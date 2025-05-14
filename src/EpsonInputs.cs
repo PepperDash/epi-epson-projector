@@ -10,11 +10,11 @@ using EpsonProjectorEpi;
 
 namespace EpsonProjectorEpi
 {
-    public class EpsonInputs : ISelectableItems<byte>
+    public class EpsonInputs : ISelectableItems<int>
     {
-        private Dictionary<byte, ISelectableItem> _items = new Dictionary<byte, ISelectableItem>();
+        private Dictionary<int, ISelectableItem> _items = new Dictionary<int, ISelectableItem>();
 
-        public Dictionary<byte, ISelectableItem> Items
+        public Dictionary<int, ISelectableItem> Items
         {
             get
             {
@@ -31,9 +31,9 @@ namespace EpsonProjectorEpi
             }
         }
 
-        private byte _currentItem;
+        private int _currentItem;
 
-        public byte CurrentItem
+        public int CurrentItem
         {
             get
             {

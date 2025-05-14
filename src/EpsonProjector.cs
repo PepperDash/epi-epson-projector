@@ -11,6 +11,8 @@ using Thread = Crestron.SimplSharpPro.CrestronThread.Thread;
 using PepperDash.Essentials.Devices.Displays;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using System.Collections.Generic;
+using PepperDash.Essentials.AppServer.Messengers;
+using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace EpsonProjectorEpi
 {
@@ -32,6 +34,8 @@ namespace EpsonProjectorEpi
         private VideoInputHandler.VideoInputStatusEnum _currentVideoInput;
         private VideoInputHandler.VideoInputStatusEnum _requestedVideoInput;
 
+        public ISelectableItems<int> Inputs { get; private set; }
+
         public EpsonProjector(string key, string name, PropsConfig config, IBasicCommunication coms) : base(key, name)
         {
             _coms = coms;
@@ -43,7 +47,8 @@ namespace EpsonProjectorEpi
 
             _commandQueue = new GenericQueue(key + "-command-queue", 213, Thread.eThreadPriority.MediumPriority, 50);
 
-            InputPorts = new RoutingPortCollection<RoutingInputPort>
+            SetupInputs();
+            /*InputPorts = new RoutingPortCollection<RoutingInputPort>
                 {
                     new RoutingInputPort("Hdmi",
                         eRoutingSignalType.Video,
@@ -65,7 +70,9 @@ namespace EpsonProjectorEpi
                         eRoutingPortConnectionType.Rgb,
                         VideoInputHandler.VideoInputStatusEnum.Video,
                         this) {Port = (int) VideoInputHandler.VideoInputStatusEnum.Video},
-                };
+                };*/
+
+            
 
             PowerIsOnFeedback =
                 new BoolFeedback("PowerIsOn", () => _currentPowerStatus == PowerHandler.PowerStatusEnum.PowerOn);
@@ -366,58 +373,23 @@ namespace EpsonProjectorEpi
                 {
                     Coms = _coms,
                     Message = Commands.MuteOff,
-                });
+            });
         }
 
-        /*private void ProcessRequestedVideoInput()
+        private void SetupInputs()
         {
-            if (!PowerIsOnFeedback.BoolValue)
-                return;
 
-            if (_requestedVideoInput == _currentVideoInput)
-                _requestedVideoInput = VideoInputHandler.VideoInputStatusEnum.None;
-
-            switch (_requestedVideoInput)
+            Inputs = new EpsonInputs
             {
-                case VideoInputHandler.VideoInputStatusEnum.None:
-                    break;
-                case VideoInputHandler.VideoInputStatusEnum.Hdmi:
-                    _commandQueue.Enqueue(new Commands.EpsonCommand
-                        {
-                            Coms = _coms,
-                            Message = Commands.SourceHdmi,
-                        });
-                    break;
-
-                case VideoInputHandler.VideoInputStatusEnum.Dvi:
-                    _commandQueue.Enqueue(new Commands.EpsonCommand
-                        {
-                            Coms = _coms,
-                            Message = Commands.SourceDvi,
-                        });
-                    break;
-
-                case VideoInputHandler.VideoInputStatusEnum.Computer:
-                    _commandQueue.Enqueue(new Commands.EpsonCommand
-                        {
-                            Coms = _coms,
-                            Message = Commands.SourceComputer,
-                        });
-                    break;
-
-                case VideoInputHandler.VideoInputStatusEnum.Video:
-                    _commandQueue.Enqueue(new Commands.EpsonCommand
-                        {
-                            Coms = _coms,
-                            Message = Commands.SourceVideo,
-                        });
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }*/
-        
+                Items = new Dictionary<int, ISelectableItem>
+                    {
+                        {1, new EpsonInput("Hdmi", "Hdmi", this, SetHDMI) },
+                        {2, new EpsonInput("DVI", "DVI", this, SetDVI) },
+                        {3, new EpsonInput("Computer", "Computer", this, SetComputer) },
+                        {4, new EpsonInput("Video", "Video", this, SetVideo) }
+                    }
+            };
+        }
 
         public void SetHDMI()
         {
@@ -653,7 +625,8 @@ namespace EpsonProjectorEpi
         public BoolFeedback PowerIsOffFeedback { get; private set; }
         public BoolFeedback VideoMuteIsOff { get; private set; }
         public StatusMonitorBase CommunicationMonitor { get; private set; }
-        public RoutingPortCollection<RoutingInputPort> InputPorts { get; private set; }
+        //public RoutingPortCollection<RoutingInputPort> InputPorts { get; private set; }
+        public ISelectableItems<EpsonInput> InputPorts { get; private set; }
         public BoolFeedback IsWarmingUpFeedback { get; private set; }
         public BoolFeedback IsCoolingDownFeedback { get; private set; }
         public FeedbackCollection<Feedback> Feedbacks { get; private set; }
