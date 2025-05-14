@@ -8,11 +8,14 @@ using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Essentials.Core.Queues;
 using Feedback = PepperDash.Essentials.Core.Feedback;
 using Thread = Crestron.SimplSharpPro.CrestronThread.Thread;
+using PepperDash.Essentials.Devices.Displays;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using System.Collections.Generic;
 
 namespace EpsonProjectorEpi
 {
     public class EpsonProjector : EssentialsBridgeableDevice, IRoutingSinkWithSwitching, IHasPowerControlWithFeedback,
-        IWarmingCooling, IOnline, IBasicVideoMuteWithFeedback, ICommunicationMonitor, IHasFeedback
+        IWarmingCooling, IOnline, IBasicVideoMuteWithFeedback, ICommunicationMonitor, IHasFeedback, ISelectableItems<int>
     {
         private readonly IBasicCommunication _coms;
         private readonly GenericQueue _commandQueue;
@@ -609,11 +612,16 @@ namespace EpsonProjectorEpi
         public string CurrentSourceInfoKey { get; set; }
         public SourceListItem CurrentSourceInfo { get; set; }
         public event SourceInfoChangeHandler CurrentSourceChange;
+        public event EventHandler ItemsUpdated;
+        public event EventHandler CurrentItemChanged;
 
         public BoolFeedback IsOnline
         {
             get { return CommunicationMonitor.IsOnlineFeedback; }
         }
+
+        public Dictionary<int, ISelectableItem> Items { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public int CurrentItem => CurrentInputValueFeedback.IntValue;
     }
 	public enum eLensFunction
 	{
