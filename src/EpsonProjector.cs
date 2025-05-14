@@ -369,7 +369,7 @@ namespace EpsonProjectorEpi
                 });
         }
 
-        private void ProcessRequestedVideoInput()
+        /*private void ProcessRequestedVideoInput()
         {
             if (!PowerIsOnFeedback.BoolValue)
                 return;
@@ -416,8 +416,43 @@ namespace EpsonProjectorEpi
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+        }*/
+
+        public void SetHDMI()
+        {
+            _commandQueue.Enqueue(new Commands.EpsonCommand
+            {
+                Coms = _coms,
+                Message = Commands.SourceHdmi,
+            });
         }
 
+        public void SetDVI()
+        {
+            _commandQueue.Enqueue(new Commands.EpsonCommand
+            {
+                Coms = _coms,
+                Message = Commands.SourceDvi,
+            });
+        }
+
+        public void SetComputer()
+        {
+            _commandQueue.Enqueue(new Commands.EpsonCommand
+            {
+                Coms = _coms,
+                Message = Commands.SourceComputer,
+            });
+        }
+
+        public void SetVideo()
+        {
+            _commandQueue.Enqueue(new Commands.EpsonCommand
+            {
+                Coms = _coms,
+                Message = Commands.SourceVideo,
+            });
+        }
         private void HandleVideoInputUpdated(object sender, Events.VideoInputEventArgs videoInputEventArgs)
         {
             _currentVideoInput = videoInputEventArgs.Input;

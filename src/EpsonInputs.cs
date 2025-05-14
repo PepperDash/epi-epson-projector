@@ -55,7 +55,7 @@ namespace EpsonProjectorEpi
 
     }
 
-    public class SamsungInput : ISelectableItem
+    public class EpsonInput : ISelectableItem
     {
         private bool _isSelected;
 
@@ -63,7 +63,7 @@ namespace EpsonProjectorEpi
 
         private Action _inputMethod;
 
-        public SamsungInput(string key, string name, EpsonProjector parent, Action inputMethod)
+        public EpsonInput(string key, string name, EpsonProjector parent, Action inputMethod)
         {
             Key = key;
             Name = name;
