@@ -417,9 +417,14 @@ namespace EpsonProjectorEpi
                     throw new ArgumentOutOfRangeException();
             }
         }*/
+        
 
         public void SetHDMI()
         {
+            if (!PowerIsOnFeedback.BoolValue)
+                return;
+
+            _requestedVideoInput = VideoInputHandler.VideoInputStatusEnum.Hdmi;
             _commandQueue.Enqueue(new Commands.EpsonCommand
             {
                 Coms = _coms,
@@ -429,6 +434,10 @@ namespace EpsonProjectorEpi
 
         public void SetDVI()
         {
+            if (!PowerIsOnFeedback.BoolValue)
+                return;
+
+            _requestedVideoInput = VideoInputHandler.VideoInputStatusEnum.Dvi;
             _commandQueue.Enqueue(new Commands.EpsonCommand
             {
                 Coms = _coms,
@@ -438,6 +447,10 @@ namespace EpsonProjectorEpi
 
         public void SetComputer()
         {
+            if (!PowerIsOnFeedback.BoolValue)
+                return;
+
+            _requestedVideoInput = VideoInputHandler.VideoInputStatusEnum.Computer;
             _commandQueue.Enqueue(new Commands.EpsonCommand
             {
                 Coms = _coms,
@@ -447,6 +460,10 @@ namespace EpsonProjectorEpi
 
         public void SetVideo()
         {
+            if (!PowerIsOnFeedback.BoolValue)
+                return;
+
+            _requestedVideoInput = VideoInputHandler.VideoInputStatusEnum.Video;
             _commandQueue.Enqueue(new Commands.EpsonCommand
             {
                 Coms = _coms,
