@@ -13,7 +13,7 @@ using System.Collections.Generic;
 namespace EpsonProjectorEpi
 {
     public class EpsonProjector : PepperDash.Essentials.Devices.Common.Displays.TwoWayDisplayBase, IHasPowerControlWithFeedback,
-        IWarmingCooling, IOnline, IBasicVideoMuteWithFeedback, ICommunicationMonitor, IHasFeedback, ISelectableItems<int>
+        IWarmingCooling, IOnline, IBasicVideoMuteWithFeedback, ICommunicationMonitor, IHasFeedback, IHasInputs<int>
     {
         private readonly IBasicCommunication _coms;
         private readonly GenericQueue _commandQueue;
@@ -620,6 +620,7 @@ namespace EpsonProjectorEpi
             {
                 if (Items.ContainsKey(value))
                 {
+                    _requestedVideoInput = (VideoInputHandler.VideoInputStatusEnum)value;
                     Items[value].Select();
                     CurrentItemChanged?.Invoke(this, EventArgs.Empty);
                 }
