@@ -9,11 +9,12 @@ using Thread = Crestron.SimplSharpPro.CrestronThread.Thread;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using System.Collections.Generic;
 using Crestron.SimplSharpPro.DM;
+using PepperDash.Essentials.Devices.Common.Displays;
 
 
 namespace EpsonProjectorEpi
 {
-    public class EpsonProjector : PepperDash.Essentials.Devices.Common.Displays.TwoWayDisplayBase, IHasPowerControlWithFeedback,
+    public class EpsonProjector : TwoWayDisplayBase,  IHasPowerControlWithFeedback,
         IWarmingCooling, IOnline, IBasicVideoMuteWithFeedback, ICommunicationMonitor, IHasFeedback, IHasInputs<int>
     {
         private readonly IBasicCommunication _coms;
@@ -391,7 +392,32 @@ namespace EpsonProjectorEpi
 
         private void SetupInputs()
         {
-
+            InputPorts.AddRange(new[]
+            {
+                new RoutingInputPort("Hdmi", 
+                    eRoutingSignalType.Video, 
+                    eRoutingPortConnectionType.Hdmi,
+                    VideoInputHandler.VideoInputStatusEnum.Hdmi, 
+                    this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Hdmi },
+                    
+                new RoutingInputPort("DVI", 
+                    eRoutingSignalType.Video, 
+                    eRoutingPortConnectionType.Dvi,
+                    VideoInputHandler.VideoInputStatusEnum.Dvi, 
+                    this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Dvi },
+                    
+                new RoutingInputPort("Computer", 
+                    eRoutingSignalType.Video, 
+                    eRoutingPortConnectionType.Vga,
+                    VideoInputHandler.VideoInputStatusEnum.Computer, 
+                    this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Computer },
+                    
+                new RoutingInputPort("Video", 
+                    eRoutingSignalType.Video, 
+                    eRoutingPortConnectionType.Rgb,
+                    VideoInputHandler.VideoInputStatusEnum.Video, 
+                    this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Video }
+            });
             Inputs = new EpsonInputs
             {
                 Items = new Dictionary<int, ISelectableItem>
@@ -406,23 +432,39 @@ namespace EpsonProjectorEpi
 
         public void SetHDMI()
         {
-            ExecuteSwitch(VideoInputHandler.VideoInputStatusEnum.Hdmi);
+             _commandQueue.Enqueue(new Commands.EpsonCommand
+                    {
+                        Coms = _coms,
+                        Message = Commands.SourceHdmi,
+                    });
         }
 
         public void SetDVI()
         {
-            ExecuteSwitch(VideoInputHandler.VideoInputStatusEnum.Dvi);
+             _commandQueue.Enqueue(new Commands.EpsonCommand
+                    {
+                        Coms = _coms,
+                        Message = Commands.SourceDvi,
+                    });
         }
 
         public void SetComputer()
         {
-            ExecuteSwitch(VideoInputHandler.VideoInputStatusEnum.Computer);
+             _commandQueue.Enqueue(new Commands.EpsonCommand
+                    {
+                        Coms = _coms,
+                        Message = Commands.SourceComputer,
+                    });
 
         }
 
         public void SetVideo()
         {
-            ExecuteSwitch(VideoInputHandler.VideoInputStatusEnum.Video);
+             _commandQueue.Enqueue(new Commands.EpsonCommand
+                    {
+                        Coms = _coms,
+                        Message = Commands.SourceVideo,
+                    });
         }
         private void HandleVideoInputUpdated(object sender, Events.VideoInputEventArgs videoInputEventArgs)
         {
@@ -615,8 +657,6 @@ namespace EpsonProjectorEpi
         public BoolFeedback PowerIsOffFeedback { get; private set; }
         public BoolFeedback VideoMuteIsOff { get; private set; }
         public StatusMonitorBase CommunicationMonitor { get; private set; }
-        //public RoutingPortCollection<RoutingInputPort> InputPorts { get; private set; }
-        public ISelectableItems<EpsonInput> InputPorts { get; private set; }
         public BoolFeedback IsWarmingUpFeedback { get; private set; }
         public BoolFeedback IsCoolingDownFeedback { get; private set; }
         public FeedbackCollection<Feedback> Feedbacks { get; private set; }
