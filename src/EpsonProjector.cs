@@ -16,7 +16,7 @@ using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace EpsonProjectorEpi
 {
-    public class EpsonProjector : EssentialsBridgeableDevice, IHasPowerControlWithFeedback,
+    public class EpsonProjector : PepperDash.Essentials.Devices.Common.Displays.TwoWayDisplayBase, IHasPowerControlWithFeedback,
         IWarmingCooling, IOnline, IBasicVideoMuteWithFeedback, ICommunicationMonitor, IHasFeedback, ISelectableItems<int>
     {
         private readonly IBasicCommunication _coms;
@@ -35,6 +35,8 @@ namespace EpsonProjectorEpi
         private VideoInputHandler.VideoInputStatusEnum _requestedVideoInput;
 
         public ISelectableItems<int> Inputs { get; private set; }
+
+
 
         public EpsonProjector(string key, string name, PropsConfig config, IBasicCommunication coms) : base(key, name)
         {
@@ -170,59 +172,8 @@ namespace EpsonProjectorEpi
 
 
 
-        public override bool CustomActivate()
-        {
-            Feedbacks.RegisterForConsoleUpdates(this);
-            Feedbacks.FireAllFeedbacks();
-
-            _pollTimer = new CTimer(o =>
-                {
-                    _commandQueue.Enqueue(new Commands.EpsonCommand
-                        {
-                            Coms = _coms,
-                            Message = Commands.PowerPoll,
-                        });
-
-                    if (!PowerIsOnFeedback.BoolValue)
-                        return;
-
-                    _commandQueue.Enqueue(new Commands.EpsonCommand
-                        {
-                            Coms = _coms,
-                            Message = Commands.SourcePoll,
-                        });
-
-                    _commandQueue.Enqueue(new Commands.EpsonCommand
-                        {
-                            Coms = _coms,
-                            Message = Commands.MutePoll,
-                        });
-                },
-                null,
-                5189,
-                _pollTime);
-
-            PowerIsOnFeedback.OutputChange += (sender, args) =>
-                {
-                    if (!args.BoolValue)
-                        return;
-
-                    ProcessRequestedVideoInput();
-                    ProcessRequestedMuteStatus();
-                };
-
-            CommunicationMonitor.Start();
-            return base.CustomActivate();
-        }
-
-        public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
-        {
-            var joinMap = new JoinMap(joinStart);
-            if (bridge != null)
-                bridge.AddJoinMap(Key, joinMap);
-
-            Bridge.LinkToApi(this, trilist, joinMap);
-        }
+        
+        
 
         private void HandlePowerStatusUpdated(object sender, Events.PowerEventArgs eventArgs)
         {
@@ -521,7 +472,7 @@ namespace EpsonProjectorEpi
 
         public BoolFeedback VideoMuteIsOn { get; private set; }
 
-        public void PowerOn()
+        public override void PowerOn()
         {
             _requestedPowerStatus = PowerHandler.PowerStatusEnum.PowerOn;
             ProcessRequestedPowerStatus();
@@ -529,7 +480,7 @@ namespace EpsonProjectorEpi
             _pollTimer.Reset(329, _pollTime);
         }
 
-        public void PowerOff()
+        public override void PowerOff()
         {
             _requestedPowerStatus = PowerHandler.PowerStatusEnum.PowerOff;
             _requestedMuteStatus = VideoMuteHandler.VideoMuteStatusEnum.None;
@@ -540,7 +491,7 @@ namespace EpsonProjectorEpi
             _pollTimer.Reset(329, _pollTime);
         }
 
-        public void PowerToggle()
+        public override void PowerToggle()
         {
             switch (_requestedPowerStatus)
             {
@@ -565,7 +516,7 @@ namespace EpsonProjectorEpi
             Feedbacks.FireAllFeedbacks();
         }
 
-        public void ExecuteSwitch(object inputSelector)
+        public override void ExecuteSwitch(object inputSelector)
         {
             try
             {
@@ -651,6 +602,13 @@ namespace EpsonProjectorEpi
 				});
 			}
 		}
+
+        
+
+        
+
+       
+
         public BoolFeedback PowerIsOnFeedback { get; private set; }
         public BoolFeedback PowerIsOffFeedback { get; private set; }
         public BoolFeedback VideoMuteIsOff { get; private set; }
@@ -675,7 +633,16 @@ namespace EpsonProjectorEpi
             get { return CommunicationMonitor.IsOnlineFeedback; }
         }
 
-        public Dictionary<int, ISelectableItem> Items { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public Dictionary<int, ISelectableItem> Items
+        {
+            get => _items;
+            set
+            {
+                _items = value;
+                ItemsUpdated?.Invoke(this, EventArgs.Empty);
+            }
+        }
+        private Dictionary<int, ISelectableItem> _items;
         public int CurrentItem
         {
             get => CurrentInputValueFeedback.IntValue;
@@ -688,6 +655,14 @@ namespace EpsonProjectorEpi
                 }
             }
         }
+
+        protected override Func<string> CurrentInputFeedbackFunc => throw new NotImplementedException();
+
+        protected override Func<bool> PowerIsOnFeedbackFunc => throw new NotImplementedException();
+
+        protected override Func<bool> IsCoolingDownFeedbackFunc => throw new NotImplementedException();
+
+        protected override Func<bool> IsWarmingUpFeedbackFunc => throw new NotImplementedException();
     }
     public enum eLensFunction
 	{
