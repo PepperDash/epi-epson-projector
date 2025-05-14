@@ -184,6 +184,50 @@ namespace EpsonProjectorEpi
             }
         }
 
+            public override bool CustomActivate()
+                    {
+                        Feedbacks.RegisterForConsoleUpdates(this);
+                        Feedbacks.FireAllFeedbacks();
+
+                        _pollTimer = new CTimer(o =>
+                            {
+                                _commandQueue.Enqueue(new Commands.EpsonCommand
+                                    {
+                                        Coms = _coms,
+                                        Message = Commands.PowerPoll,
+                                    });
+
+                                if (!PowerIsOnFeedback.BoolValue)
+                                    return;
+
+                                _commandQueue.Enqueue(new Commands.EpsonCommand
+                                    {
+                                        Coms = _coms,
+                                        Message = Commands.SourcePoll,
+                                    });
+
+                                _commandQueue.Enqueue(new Commands.EpsonCommand
+                                    {
+                                        Coms = _coms,
+                                        Message = Commands.MutePoll,
+                                    });
+                            },
+                            null,
+                            5189,
+                            _pollTime);
+
+                        PowerIsOnFeedback.OutputChange += (sender, args) =>
+                            {
+                                if (!args.BoolValue)
+                                    return;
+
+                                ProcessRequestedVideoInput();
+                                ProcessRequestedMuteStatus();
+                            };
+
+                        CommunicationMonitor.Start();
+                        return base.CustomActivate();
+                    }
         private void ProcessRequestedPowerOn()
         {
             if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerOn)
