@@ -10,6 +10,7 @@ using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using System.Collections.Generic;
 using Crestron.SimplSharpPro.DM;
 using PepperDash.Essentials.Devices.Common.Displays;
+using PepperDash.Essentials.Core.Bridges;
 
 
 namespace EpsonProjectorEpi
@@ -176,27 +177,6 @@ namespace EpsonProjectorEpi
             Feedbacks.FireAllFeedbacks();
         }
 
-        private void ProcessRequestedPowerStatus()
-        {
-            switch (_requestedPowerStatus)
-            {
-                case PowerHandler.PowerStatusEnum.PowerOn:
-                    ProcessRequestedPowerOn();
-                    break;
-                case PowerHandler.PowerStatusEnum.PowerWarming:
-                    break;
-                case PowerHandler.PowerStatusEnum.PowerCooling:
-                    break;
-                case PowerHandler.PowerStatusEnum.PowerOff:
-                    ProcessRequestedPowerOff();
-                    break;
-                case PowerHandler.PowerStatusEnum.None:
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
             public override bool CustomActivate()
                     {
                         Feedbacks.RegisterForConsoleUpdates(this);
@@ -247,31 +227,7 @@ namespace EpsonProjectorEpi
 
             CommunicationMonitor.Start();
             return base.CustomActivate();
-        }
-
-        public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
-        {
-            var joinMap = new JoinMap(joinStart);
-            if (bridge != null)
-                bridge.AddJoinMap(Key, joinMap);
-
-            Bridge.LinkToApi(this, trilist, joinMap);
-        }
-
-        private void HandlePowerStatusUpdated(object sender, Events.PowerEventArgs eventArgs)
-        {
-            _currentPowerStatus = eventArgs.Status;
-            ProcessRequestedPowerStatus();
-            Feedbacks.FireAllFeedbacks();
-        }
-
-        private void HandleMuteStatusUpdated(object sender, Events.VideoMuteEventArgs videoMuteEventArgs)
-        {
-            _currentVideoMuteStatus = videoMuteEventArgs.Status;
-
-            ProcessRequestedMuteStatus();
-            Feedbacks.FireAllFeedbacks();
-        }
+        }        
 
         private void HandleFreezeStatusUpdated(object sender, Events.VideoFreezeEventArgs videoFreezeEventArgs)
         {
@@ -418,62 +374,6 @@ namespace EpsonProjectorEpi
             {
                 Coms = _coms,
                 Message = Commands.MuteOff,
-            });
-        }
-
-        private void ProcessRequestedFreezeStatus()
-        {
-            if (!PowerIsOnFeedback.BoolValue)
-                return;
-
-            switch (_requestedFreezeStatus)
-            {
-                case VideoFreezeHandler.VideoFreezeStatusEnum.Frozen:
-                    ProcessRequestedFreezeOnStatus();
-                    break;
-                case VideoFreezeHandler.VideoFreezeStatusEnum.Unfrozen:
-                    ProcessRequestedFreezeOffStatus();
-                    break;
-                case VideoFreezeHandler.VideoFreezeStatusEnum.None:
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
-        private void ProcessRequestedFreezeOnStatus()
-        {
-            if (_requestedFreezeStatus != VideoFreezeHandler.VideoFreezeStatusEnum.Frozen)
-                throw new InvalidOperationException("Freeze on isn't requested");
-
-            if (_requestedFreezeStatus == VideoFreezeHandler.VideoFreezeStatusEnum.None ||
-                _currentVideoFreezeStatus == VideoFreezeHandler.VideoFreezeStatusEnum.Frozen)
-            {
-                _requestedFreezeStatus = VideoFreezeHandler.VideoFreezeStatusEnum.None;
-            }
-
-            _commandQueue.Enqueue(new Commands.EpsonCommand
-            {
-                Coms = _coms,
-                Message = Commands.FreezeOn,
-            });
-        }
-
-        private void ProcessRequestedFreezeOffStatus()
-        {
-            if (_requestedFreezeStatus != VideoFreezeHandler.VideoFreezeStatusEnum.Unfrozen)
-                throw new InvalidOperationException("Freeze off isn't requested");
-
-            if (_requestedFreezeStatus == VideoFreezeHandler.VideoFreezeStatusEnum.None ||
-                _currentVideoFreezeStatus == VideoFreezeHandler.VideoFreezeStatusEnum.Unfrozen)
-            {
-                _requestedFreezeStatus = VideoFreezeHandler.VideoFreezeStatusEnum.None;
-            }
-
-            _commandQueue.Enqueue(new Commands.EpsonCommand
-            {
-                Coms = _coms,
-                Message = Commands.FreezeOff,
             });
         }
 
