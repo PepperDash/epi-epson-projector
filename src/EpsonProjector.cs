@@ -8,6 +8,7 @@ using Feedback = PepperDash.Essentials.Core.Feedback;
 using Thread = Crestron.SimplSharpPro.CrestronThread.Thread;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using System.Collections.Generic;
+using Crestron.SimplSharpPro.DM;
 
 
 namespace EpsonProjectorEpi
@@ -45,6 +46,8 @@ namespace EpsonProjectorEpi
 
             _commandQueue = new GenericQueue(key + "-command-queue", 213, Thread.eThreadPriority.MediumPriority, 50);
 
+            
+
             SetupInputs();
                
             PowerIsOnFeedback =
@@ -76,7 +79,7 @@ namespace EpsonProjectorEpi
             muteHandler.VideoMuteStatusUpdated += HandleMuteStatusUpdated;
 
             var inputHandler = new VideoInputHandler(key);
-            inputHandler.VideoInputUpdated += HandleVideoInputUpdated;
+            //inputHandler.VideoInputUpdated += HandleVideoInputUpdated;
 
             new StringResponseProcessor(gather,
                 s =>
@@ -308,16 +311,32 @@ namespace EpsonProjectorEpi
             switch (_requestedVideoInput)
             {
                 case VideoInputHandler.VideoInputStatusEnum.Hdmi:
-                    SetHDMI();
+                    _commandQueue.Enqueue(new Commands.EpsonCommand
+                    {
+                        Coms = _coms,
+                        Message = Commands.SourceHdmi,
+                    });
                     break;
                 case VideoInputHandler.VideoInputStatusEnum.Dvi:
-                    SetDVI();
+                    _commandQueue.Enqueue(new Commands.EpsonCommand
+                    {
+                        Coms = _coms,
+                        Message = Commands.SourceDvi,
+                    });
                     break;
                 case VideoInputHandler.VideoInputStatusEnum.Computer:
-                    SetComputer();
+                    _commandQueue.Enqueue(new Commands.EpsonCommand
+                    {
+                        Coms = _coms,
+                        Message = Commands.SourceComputer,
+                    });
                     break;
                 case VideoInputHandler.VideoInputStatusEnum.Video:
-                    SetVideo();
+                    _commandQueue.Enqueue(new Commands.EpsonCommand
+                    {
+                        Coms = _coms,
+                        Message = Commands.SourceVideo,
+                    });
                     break;
                 case VideoInputHandler.VideoInputStatusEnum.None:
                     break;
@@ -343,54 +362,23 @@ namespace EpsonProjectorEpi
 
         public void SetHDMI()
         {
-            if (!PowerIsOnFeedback.BoolValue)
-                return;
-
-            _requestedVideoInput = VideoInputHandler.VideoInputStatusEnum.Hdmi;
-            _commandQueue.Enqueue(new Commands.EpsonCommand
-            {
-                Coms = _coms,
-                Message = Commands.SourceHdmi,
-            });
+            ExecuteSwitch(VideoInputHandler.VideoInputStatusEnum.Hdmi);
         }
 
         public void SetDVI()
         {
-            if (!PowerIsOnFeedback.BoolValue)
-                return;
-
-            _requestedVideoInput = VideoInputHandler.VideoInputStatusEnum.Dvi;
-            _commandQueue.Enqueue(new Commands.EpsonCommand
-            {
-                Coms = _coms,
-                Message = Commands.SourceDvi,
-            });
+            ExecuteSwitch(VideoInputHandler.VideoInputStatusEnum.Dvi);
         }
 
         public void SetComputer()
         {
-            if (!PowerIsOnFeedback.BoolValue)
-                return;
+            ExecuteSwitch(VideoInputHandler.VideoInputStatusEnum.Computer);
 
-            _requestedVideoInput = VideoInputHandler.VideoInputStatusEnum.Computer;
-            _commandQueue.Enqueue(new Commands.EpsonCommand
-            {
-                Coms = _coms,
-                Message = Commands.SourceComputer,
-            });
         }
 
         public void SetVideo()
         {
-            if (!PowerIsOnFeedback.BoolValue)
-                return;
-
-            _requestedVideoInput = VideoInputHandler.VideoInputStatusEnum.Video;
-            _commandQueue.Enqueue(new Commands.EpsonCommand
-            {
-                Coms = _coms,
-                Message = Commands.SourceVideo,
-            });
+            ExecuteSwitch(VideoInputHandler.VideoInputStatusEnum.Video);
         }
         private void HandleVideoInputUpdated(object sender, Events.VideoInputEventArgs videoInputEventArgs)
         {
