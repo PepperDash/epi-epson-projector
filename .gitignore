@@ -353,4 +353,4 @@ MigrationBackup/
 *.projectinfo
 *.projectinfo~Stashed changes
 .DS_Store
-output/epi-epson-projector.4Series.1.0.0-local.cplz
+output/
