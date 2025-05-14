@@ -16,7 +16,7 @@ using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace EpsonProjectorEpi
 {
-    public class EpsonProjector : EssentialsBridgeableDevice, IRoutingSinkWithSwitching, IHasPowerControlWithFeedback,
+    public class EpsonProjector : EssentialsBridgeableDevice, IHasPowerControlWithFeedback,
         IWarmingCooling, IOnline, IBasicVideoMuteWithFeedback, ICommunicationMonitor, IHasFeedback, ISelectableItems<int>
     {
         private readonly IBasicCommunication _coms;
@@ -73,6 +73,7 @@ namespace EpsonProjectorEpi
                 };*/
 
             
+
 
             PowerIsOnFeedback =
                 new BoolFeedback("PowerIsOn", () => _currentPowerStatus == PowerHandler.PowerStatusEnum.PowerOn);
@@ -166,6 +167,8 @@ namespace EpsonProjectorEpi
                     TimeToError = 360000,
                 };
         }
+
+
 
         public override bool CustomActivate()
         {
@@ -376,6 +379,32 @@ namespace EpsonProjectorEpi
             });
         }
 
+        private void ProcessRequestedVideoInput()
+        {
+            if (!PowerIsOnFeedback.BoolValue)
+                return;
+
+            switch (_requestedVideoInput)
+            {
+                case VideoInputHandler.VideoInputStatusEnum.Hdmi:
+                    SetHDMI();
+                    break;
+                case VideoInputHandler.VideoInputStatusEnum.Dvi:
+                    SetDVI();
+                    break;
+                case VideoInputHandler.VideoInputStatusEnum.Computer:
+                    SetComputer();
+                    break;
+                case VideoInputHandler.VideoInputStatusEnum.Video:
+                    SetVideo();
+                    break;
+                case VideoInputHandler.VideoInputStatusEnum.None:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
         private void SetupInputs()
         {
 
@@ -445,6 +474,7 @@ namespace EpsonProjectorEpi
         private void HandleVideoInputUpdated(object sender, Events.VideoInputEventArgs videoInputEventArgs)
         {
             _currentVideoInput = videoInputEventArgs.Input;
+            Inputs.CurrentItem = (int)_currentVideoInput;
             ProcessRequestedVideoInput();
             Feedbacks.FireAllFeedbacks();
         }
@@ -646,9 +676,20 @@ namespace EpsonProjectorEpi
         }
 
         public Dictionary<int, ISelectableItem> Items { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public int CurrentItem => CurrentInputValueFeedback.IntValue;
+        public int CurrentItem
+        {
+            get => CurrentInputValueFeedback.IntValue;
+            set
+            {
+                if (Items.ContainsKey(value))
+                {
+                    Items[value].Select();
+                    CurrentItemChanged?.Invoke(this, EventArgs.Empty);
+                }
+            }
+        }
     }
-	public enum eLensFunction
+    public enum eLensFunction
 	{
 		ZoomPlus,
 		ZoomMinus,
