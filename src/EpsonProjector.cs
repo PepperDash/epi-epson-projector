@@ -1,11 +1,18 @@
 ﻿using System;
-
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
+using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
+using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.Queues;
+using PepperDash.Essentials.Core.DeviceInfo;
+using PepperDash.Essentials.Core.Devices;
 using Feedback = PepperDash.Essentials.Core.Feedback;
 using Thread = Crestron.SimplSharpPro.CrestronThread.Thread;
 
@@ -20,6 +27,11 @@ namespace EpsonProjectorEpi
 		private CTimer _LensTimer; 
         private const int _pollTime = 6000;
 
+        private DeviceConfig _dc;
+
+        private bool _ipChanged;
+        public BoolFeedback IpChangeFeedback;
+
         private PowerHandler.PowerStatusEnum _currentPowerStatus;
         private PowerHandler.PowerStatusEnum _requestedPowerStatus;
 
@@ -32,11 +44,14 @@ namespace EpsonProjectorEpi
         private VideoInputHandler.VideoInputStatusEnum _currentVideoInput;
         private VideoInputHandler.VideoInputStatusEnum _requestedVideoInput;
 
-        public EpsonProjector(string key, string name, PropsConfig config, IBasicCommunication coms) : base(key, name)
+        public EpsonProjector(string key, string name, PropsConfig config, IBasicCommunication coms, DeviceConfig dc)
+            : base(key, name)
         {
             _coms = coms;
             if (config.Monitor == null)
                 config.Monitor = GetDefaultMonitorConfig();
+
+            _dc = dc;
 
             CommunicationMonitor = new GenericCommunicationMonitor(this, coms, config.Monitor);
             var gather = new CommunicationGather(coms, "\x0D:");
@@ -90,6 +105,8 @@ namespace EpsonProjectorEpi
 
             VideoFreezeIsOff =
                 new BoolFeedback(() => !VideoFreezeIsOn.BoolValue && PowerIsOnFeedback.BoolValue);
+
+            IpChangeFeedback = new BoolFeedback(() => _ipChanged);
 
             var powerHandler = new PowerHandler(key);
             powerHandler.PowerStatusUpdated += HandlePowerStatusUpdated;
@@ -227,7 +244,73 @@ namespace EpsonProjectorEpi
             if (bridge != null)
                 bridge.AddJoinMap(Key, joinMap);
 
+            JoinDataComplete setIpJoinData;
+            if (joinMap.Joins.TryGetValue("SetIpAddress", out setIpJoinData))
+            {
+                trilist.SetStringSigAction(setIpJoinData.JoinNumber, SetIpAddress);
+                Debug.Console(1, this, "Registered SetIpAddress to join {0}", setIpJoinData.JoinNumber);
+
+            }
+
+            JoinDataComplete ipSetFbJoinData;
+            if (joinMap.Joins.TryGetValue("IpAddressSetFeedback", out ipSetFbJoinData))
+            {
+                IpChangeFeedback.OutputChange += (o, a) =>
+                {
+                    if (!a.BoolValue) return;
+                    trilist.PulseBool(ipSetFbJoinData.JoinNumber, 1000);
+                    _ipChanged = false;
+                    IpChangeFeedback.FireUpdate();
+                };
+            }
+
             Bridge.LinkToApi(this, trilist, joinMap);
+        }
+
+        protected void CustomSetConfig(DeviceConfig config)
+        {
+            ConfigWriter.UpdateDeviceConfig(_dc);
+
+               Debug.Console(0, this, "IP address changed to {0}. Restart Essentials to take effect.", _dc.Properties["control"]["tcpSshProperties"]["address"].ToString());
+
+            _ipChanged = true;
+            IpChangeFeedback.FireUpdate();
+        }
+
+        private void SetIpAddress(string hostname)
+        {
+            try
+            {
+                Debug.Console(0, this, "SetIpAddress called with hostname: '{0}'", hostname);
+
+                var currentHostname = _dc.Properties["control"]["tcpSshProperties"]["address"].ToString();
+
+                Debug.Console(0, this, "Current hostname is: '{0}'", currentHostname);
+
+                if (hostname.Length <= 2)
+                {
+                    Debug.Console(0, this, "Hostname is too short; ignoring.");
+
+                    return;
+                }
+                if (currentHostname == hostname)
+                {
+                    Debug.Console(0, this, "Hostname is the same as current; no change needed.");
+
+                    return;
+                }
+                //UpdateHostname(hostname);
+
+                _dc.Properties["control"]["tcpSshProperties"]["address"] = hostname;
+                Debug.Console(0, this, "New hostname set to: '{0}'", hostname);
+
+                CustomSetConfig(_dc);
+            }
+            catch (Exception e)
+            {
+              
+                    Debug.Console(2, this, "Error SetIpAddress: '{0}'", e);
+            }
         }
 
         private void HandlePowerStatusUpdated(object sender, Events.PowerEventArgs eventArgs)
@@ -507,6 +590,8 @@ namespace EpsonProjectorEpi
 
         public void VideoMuteToggle()
         {
+            Debug.Console(0, this, "VideoMuteToggle called. Current status: {0}", _currentVideoMuteStatus);
+
             switch (_currentVideoMuteStatus)
             {
                 case VideoMuteHandler.VideoMuteStatusEnum.Muted:
@@ -549,6 +634,8 @@ namespace EpsonProjectorEpi
 
         public void VideoFreezeToggle()
         {
+            Debug.Console(0, this, "VideoFreezeToggle called. Current status: {0}", _currentVideoFreezeStatus);
+
             switch (_currentVideoFreezeStatus)
             {
                 case VideoFreezeHandler.VideoFreezeStatusEnum.Frozen:
