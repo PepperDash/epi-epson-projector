@@ -4,11 +4,35 @@
     {
       "name": "feature/IP-dynamic--essentials-v1.x",
       "range": "2.x"
+    },
+    {
+      "name": "maintenance/essentialsVersion1.x",
+      "range": "2.x"
     }
+
   ],
   "plugins": [
-    "@semantic-release/commit-analyzer",
-    "@semantic-release/release-notes-generator",
-    "@semantic-release/github"
-  ]
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "releaseRules": [
+          { "scope": "force-patch", "release": "patch" },
+          { "scope": "no-release", "release": false }
+        ]
+      }
+    ],
+    "@semantic-release/release-notes-generator",    
+    ["@semantic-release/changelog", 
+      {
+        "changelogFile": "CHANGELOG.md"
+      }
+    ],
+    [
+      "@semantic-release/exec",
+      {
+        "verifyReleaseCmd": "echo \"newVersion=true\" >> $GITHUB_OUTPUT",
+        "publishCmd": "echo \"version=${nextRelease.version}\" >> $GITHUB_OUTPUT && echo \"tag=${nextRelease.gitTag}\" >> $GITHUB_OUTPUT && echo \"type=${nextRelease.type}\" >> $GITHUB_OUTPUT && echo \"channel=${nextRelease.channel}\" >> $GITHUB_OUTPUT"
+      }
+    ]
+  ]  
 }
