@@ -1,7 +1,10 @@
 {
   "branches": [
     "main",
-    "feature/IP-dynamic--essentials-v1.x"
+    {
+      "name": "feature/IP-dynamic--essentials-v1.x",
+      "range": "2.x"
+    }
   ],
   "plugins": [
     "@semantic-release/commit-analyzer",
