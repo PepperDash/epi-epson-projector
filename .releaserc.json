@@ -1,0 +1,11 @@
+{
+  "branches": [
+    "main",
+    "feature/IP-dynamic--essentials-v1.x"
+  ],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/github"
+  ]
+}
