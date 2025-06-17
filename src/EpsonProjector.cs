@@ -23,6 +23,8 @@ namespace EpsonProjectorEpi
         private CTimer _pollTimer;
 		private CTimer _LensTimer; 
         private const int _pollTime = 6000;
+        private const long DefaultWarmUpTimeMs = 1000;
+        private const long DefaultCooldownTimeMs = 2000;
 
         private PowerHandler.PowerStatusEnum _currentPowerStatus;
         private PowerHandler.PowerStatusEnum _requestedPowerStatus;
@@ -37,6 +39,9 @@ namespace EpsonProjectorEpi
         private VideoInputHandler.VideoInputStatusEnum _requestedVideoInput;
 
         public ISelectableItems<int> Inputs { get; private set; }
+        
+        private bool _isWarming;
+        private bool _isCooling;
 
 
 
@@ -51,18 +56,12 @@ namespace EpsonProjectorEpi
 
             _commandQueue = new GenericQueue(key + "-command-queue", 213, Thread.eThreadPriority.MediumPriority, 50);
 
-            
+
 
             SetupInputs();
-               
+
             PowerIsOnFeedback =
                 new BoolFeedback("PowerIsOn", () => _currentPowerStatus == PowerHandler.PowerStatusEnum.PowerOn);
-
-            IsWarmingUpFeedback =
-                new BoolFeedback("IsWarmingUp", () => _currentPowerStatus == PowerHandler.PowerStatusEnum.PowerWarming);
-
-            IsCoolingDownFeedback =
-                new BoolFeedback("IsCoolingDown", () => _currentPowerStatus == PowerHandler.PowerStatusEnum.PowerCooling);
 
             PowerIsOffFeedback =
                 new BoolFeedback(() => _currentPowerStatus == PowerHandler.PowerStatusEnum.PowerOff);
@@ -113,7 +112,7 @@ namespace EpsonProjectorEpi
                             if (!PowerIsOnFeedback.BoolValue)
                                 return 0;
 
-                            return (int) _currentVideoInput;
+                            return (int)_currentVideoInput;
                         });
 
             Feedbacks = new FeedbackCollection<Feedback>
@@ -275,6 +274,8 @@ namespace EpsonProjectorEpi
                     break;
                 case PowerHandler.PowerStatusEnum.PowerOff:
                     _currentPowerStatus = PowerHandler.PowerStatusEnum.PowerWarming;
+                    _isWarming = true;
+                    IsWarmingUpFeedback.FireUpdate();
                     break;
 
                 case PowerHandler.PowerStatusEnum.None:
@@ -299,6 +300,8 @@ namespace EpsonProjectorEpi
             {
                 case PowerHandler.PowerStatusEnum.PowerOn:
                     _currentPowerStatus = PowerHandler.PowerStatusEnum.PowerCooling;
+                    _isCooling = true;
+                    IsCoolingDownFeedback.FireUpdate();
                     break;
                 case PowerHandler.PowerStatusEnum.PowerWarming:
                     break;
@@ -649,6 +652,11 @@ namespace EpsonProjectorEpi
             ProcessRequestedPowerStatus();
             Feedbacks.FireAllFeedbacks();
             _pollTimer.Reset(329, _pollTime);
+            WarmupTimer = new CTimer(o =>
+            {
+                _isWarming = false;
+                IsWarmingUpFeedback.FireUpdate();
+            }, WarmupTime);
         }
 
         public override void PowerOff()
@@ -661,6 +669,11 @@ namespace EpsonProjectorEpi
             ProcessRequestedPowerStatus();
             Feedbacks.FireAllFeedbacks();
             _pollTimer.Reset(329, _pollTime);
+            CooldownTimer = new CTimer(o =>
+            {
+                _isCooling = false;
+                IsCoolingDownFeedback.FireUpdate();
+            }, CooldownTime);
         }
 
         public override void PowerToggle()
@@ -777,18 +790,11 @@ namespace EpsonProjectorEpi
 		}
 
         
-
-        
-
-       
-
         public BoolFeedback PowerIsOnFeedback { get; private set; }
         public BoolFeedback PowerIsOffFeedback { get; private set; }
         public BoolFeedback VideoMuteIsOff { get; private set; }
         public BoolFeedback VideoFreezeIsOff { get; private set; }
         public StatusMonitorBase CommunicationMonitor { get; private set; }
-        public BoolFeedback IsWarmingUpFeedback { get; private set; }
-        public BoolFeedback IsCoolingDownFeedback { get; private set; }
         public FeedbackCollection<Feedback> Feedbacks { get; private set; }
         public IntFeedback LampHoursFeedback { get; private set; }
         public StringFeedback SerialNumberFeedback { get; private set; }
@@ -829,13 +835,19 @@ namespace EpsonProjectorEpi
             }
         }
 
+        protected override Func<bool> IsCoolingDownFeedbackFunc
+        {
+            get { return () => _isCooling; }
+        }
+
+        protected override Func<bool> IsWarmingUpFeedbackFunc
+        {
+            get { return () => _isWarming; }
+        }
+
         protected override Func<string> CurrentInputFeedbackFunc => () => CurrentInputValueFeedback.IntValue.ToString();
 
         protected override Func<bool> PowerIsOnFeedbackFunc => () => PowerIsOnFeedback.BoolValue;
-
-        protected override Func<bool> IsCoolingDownFeedbackFunc => () => IsCoolingDownFeedback.BoolValue;
-
-        protected override Func<bool> IsWarmingUpFeedbackFunc => () => IsWarmingUpFeedback.BoolValue;
     }
     public enum eLensFunction
 	{
