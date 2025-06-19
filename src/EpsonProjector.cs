@@ -558,7 +558,7 @@ namespace EpsonProjectorEpi
         {
             _currentVideoInput = videoInputEventArgs.Input;
             Inputs.CurrentItem = (int)_currentVideoInput;
-            ProcessRequestedVideoInput();
+            //ProcessRequestedVideoInput();
             Feedbacks.FireAllFeedbacks();
         }
 
