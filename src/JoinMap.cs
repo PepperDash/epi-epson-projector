@@ -43,7 +43,47 @@ namespace EpsonProjectorEpi
                 JoinType = eJoinType.Digital,
                 Description = "Cooling"
             });
+        [JoinName("Mute Off Legacy")]
+        public JoinDataComplete MuteOffLegacy = new JoinDataComplete(
+            new JoinData()
+            {
+                JoinNumber = 5,
+                JoinSpan = 1
+            },
+            new JoinMetadata()
+            {
+                JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                JoinType = eJoinType.Digital,
+                Description = "Mute Off Legacy"
+            });
 
+        [JoinName("Mute OnLegacy")]
+        public JoinDataComplete MuteOnLegacy = new JoinDataComplete(
+            new JoinData()
+            {
+                JoinNumber = 6,
+                JoinSpan = 1
+            },
+            new JoinMetadata()
+            {
+                JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                JoinType = eJoinType.Digital,
+                Description = "Mute On Legacy"
+            });
+
+        [JoinName("Mute Toggle Legacy")]
+        public JoinDataComplete MuteToggleLegacy = new JoinDataComplete(
+            new JoinData()
+            {
+                JoinNumber = 7,
+                JoinSpan = 1
+            },
+            new JoinMetadata()
+            {
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Digital,
+                Description = "Mute Toggle Legacy"
+            });
         [JoinName("Mute Off")]
         public JoinDataComplete MuteOff = new JoinDataComplete(
             new JoinData() { JoinNumber = 21, JoinSpan = 1 },
