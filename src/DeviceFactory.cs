@@ -16,7 +16,7 @@ namespace EpsonProjectorEpi
         {
             var props = PropsConfig.FromDeviceConfig(dc);
             var coms = CommFactory.CreateCommForDevice(dc);
-            var device = new EpsonProjector(dc.Key, dc.Name, props, coms);
+            var device = new EpsonProjector(dc.Key, dc.Name, props, coms,dc);
 
             return device;
         }
