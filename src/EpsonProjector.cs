@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Text;
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Core;
@@ -18,11 +20,20 @@ namespace EpsonProjectorEpi
     {
         private readonly IBasicCommunication _coms;
         private readonly GenericQueue _commandQueue;
+
+        private static readonly byte[] HeaderPrefix = new byte[]
+        {
+            0x45, 0x53, 0x43, 0x2F, 0x56, 0x50, 0x2E, 0x6E,
+            0x65, 0x74, 0x10, 0x03, 0x00, 0x00, 0x00, 0x01,
+            0x01, 0x01
+        };
+
         private CTimer _pollTimer;
 		private CTimer _LensTimer; 
         private const int _pollTime = 6000;
 
         private DeviceConfig _dc;
+        private string _passKey;
 
         private bool _ipChanged;
         public BoolFeedback IpChangeFeedback;
@@ -47,6 +58,9 @@ namespace EpsonProjectorEpi
                 config.Monitor = GetDefaultMonitorConfig();
 
             _dc = dc;
+
+            _passKey = config.PassKey;
+
 
             CommunicationMonitor = new GenericCommunicationMonitor(this, coms, config.Monitor);
             CommunicationMonitor.Stop();
@@ -183,7 +197,25 @@ namespace EpsonProjectorEpi
             if (e.Client.IsConnected)
             {
                 Debug.Console(2, this, "Connected, sending ESCVPnet Command");
-                var cmd = new byte[] { 0x45, 0x53, 0x43, 0x2F, 0x56, 0x50, 0x2E, 0x6E, 0x65, 0x74, 0x10, 0x03, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x30, 0x30, 0x30, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+                //var cmd = new byte[] { 0x45, 0x53, 0x43, 0x2F, 0x56, 0x50, 0x2E, 0x6E, 0x65, 0x74, 0x10, 0x03, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x30, 0x30, 0x30, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+                if (_passKey == null)
+                {
+                    Debug.Console(2, this, "Passkey cannot be null");
+                    return;
+                }
+                else if (_passKey.Length > 16)
+                {
+                    Debug.Console(2, this, "Passkey cannot be longer than 16 characters");
+                    return;
+                }
+
+                byte[] keyBytes = Encoding.ASCII.GetBytes(_passKey);
+                byte[] paddedKey = new byte[16];
+                Array.Copy(keyBytes, paddedKey, keyBytes.Length);
+                byte[] cmd = new byte[HeaderPrefix.Length + paddedKey.Length];
+                Buffer.BlockCopy(HeaderPrefix, 0, cmd, 0, HeaderPrefix.Length);
+                Buffer.BlockCopy(paddedKey, 0, cmd, HeaderPrefix.Length, paddedKey.Length);
                 _coms.SendBytes(cmd);
                 _pollTimer.Reset(329, _pollTime);
                 CommunicationMonitor.Start();
