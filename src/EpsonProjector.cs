@@ -63,22 +63,22 @@ namespace EpsonProjectorEpi
 
             InputPorts = new RoutingPortCollection<RoutingInputPort>
                 {
-                    new RoutingInputPort("Hdmi",
+                    new RoutingInputPort("Hdmi1",
                         eRoutingSignalType.Video,
                         eRoutingPortConnectionType.Hdmi,
                         VideoInputHandler.VideoInputStatusEnum.Hdmi,
                         this) {Port = (int) VideoInputHandler.VideoInputStatusEnum.Hdmi},
-                    new RoutingInputPort("DVI",
+                    new RoutingInputPort("Hdmi2",
                         eRoutingSignalType.Video,
                         eRoutingPortConnectionType.Dvi,
                         VideoInputHandler.VideoInputStatusEnum.Dvi,
                         this) {Port = (int) VideoInputHandler.VideoInputStatusEnum.Dvi},
-                    new RoutingInputPort("Computer",
+                    new RoutingInputPort("LAN",
                         eRoutingSignalType.Video,
                         eRoutingPortConnectionType.Vga,
                         VideoInputHandler.VideoInputStatusEnum.Computer,
                         this) {Port = (int) VideoInputHandler.VideoInputStatusEnum.Computer},
-                    new RoutingInputPort("Video",
+                    new RoutingInputPort("Mirroring",
                         eRoutingSignalType.Video,
                         eRoutingPortConnectionType.Rgb,
                         VideoInputHandler.VideoInputStatusEnum.Video,
@@ -183,7 +183,7 @@ namespace EpsonProjectorEpi
             if (e.Client.IsConnected)
             {
                 Debug.Console(2, this, "Connected, sending ESCVPnet Command");
-                var cmd = new byte[] {0x45, 0x53, 0x43, 0x2F, 0x56, 0x50, 0x2E, 0x6E, 0x65, 0x74, 0x10, 0x03, 0x00, 0x00, 0x00, 0x00};
+                var cmd = new byte[] { 0x45, 0x53, 0x43, 0x2F, 0x56, 0x50, 0x2E, 0x6E, 0x65, 0x74, 0x10, 0x03, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x30, 0x30, 0x30, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
                 _coms.SendBytes(cmd);
                 _pollTimer.Reset(329, _pollTime);
                 CommunicationMonitor.Start();

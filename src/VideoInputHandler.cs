@@ -8,8 +8,8 @@ namespace EpsonProjectorEpi
         public const string SearchString = "SOURCE=";
         public const string VideoInputHdmi = "SOURCE=30";
         public const string VideoInputDvi = "SOURCE=A0";
-        public const string VideoInputComputer = "SOURCE=11";
-        public const string VideoInputVideo = "SOURCE=45";
+        public const string VideoInputComputer = "SOURCE=53";
+        public const string VideoInputVideo = "SOURCE=56";
 
         public enum VideoInputStatusEnum
         {
