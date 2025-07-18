@@ -1,16 +1,5 @@
-{
-  "branches": [
-    "main",
-    {
-      "name": "feature/IP-dynamic--essentials-v1.x",
-      "range": "2.x"
-    },
-    {
-      "name": "maintenance/essentialsVersion1.x",
-      "range": "2.x"
-    }
 
-  ],
+{
   "plugins": [
     [
       "@semantic-release/commit-analyzer",
@@ -34,5 +23,13 @@
         "publishCmd": "echo \"version=${nextRelease.version}\" >> $GITHUB_OUTPUT && echo \"tag=${nextRelease.gitTag}\" >> $GITHUB_OUTPUT && echo \"type=${nextRelease.type}\" >> $GITHUB_OUTPUT && echo \"channel=${nextRelease.channel}\" >> $GITHUB_OUTPUT"
       }
     ]
-  ]  
+  ],  
+  "branches": [
+    "main",
+    {
+      "name": "replace-me-feature-branch",
+      "prerelease": "replace-me-prerelease",
+      "channel": "replace-me-prerelease"
+    }
+  ]
 }
