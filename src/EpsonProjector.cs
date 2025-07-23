@@ -60,7 +60,23 @@ namespace EpsonProjectorEpi
 
             _commandQueue = new GenericQueue(key + "-command-queue", 213, Thread.eThreadPriority.MediumPriority, 50);
 
+            if (_config.WarmingTimeMs == 0)
+            {
+                WarmupTime = (uint)DefaultWarmUpTimeMs;
+            }
+            else
+            {
+                WarmupTime = _config.WarmingTimeMs;
+            }
 
+            if (_config.CoolingTimeMs == 0)
+            {
+                CooldownTime = (uint)DefaultCooldownTimeMs;
+            }
+            else
+            {
+                CooldownTime = _config.CoolingTimeMs;
+            }
 
             SetupInputs();
 

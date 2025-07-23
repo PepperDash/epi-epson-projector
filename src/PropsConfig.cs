@@ -16,6 +16,12 @@ namespace EpsonProjectorEpi
         public EssentialsControlPropertiesConfig Control { get; set; }
         public CommunicationMonitorConfig Monitor { get; set; }
         public bool EnableBridgeComms { get; set; }
+        
+        [JsonProperty("coolingTimeMs")]
+        public uint CoolingTimeMs { get; set; }
+
+        [JsonProperty("warmingTimeMs")]
+        public uint WarmingTimeMs { get; set; }
 
         [JsonProperty("activeInputs")]
         public List<ActiveInputs> ActiveInputs { get; set; } 
