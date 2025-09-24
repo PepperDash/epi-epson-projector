@@ -9,15 +9,13 @@ using Feedback = PepperDash.Essentials.Core.Feedback;
 using Thread = Crestron.SimplSharpPro.CrestronThread.Thread;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using System.Collections.Generic;
-using Crestron.SimplSharpPro.DM;
 using PepperDash.Essentials.Devices.Common.Displays;
-using PepperDash.Essentials.Core.Bridges;
-using Independentsoft.Exchange;
+using PepperDash.Core.Logging;
 
 
 namespace EpsonProjectorEpi
 {
-    public class EpsonProjector : TwoWayDisplayBase, IHasPowerControlWithFeedback,
+    public class EpsonProjector : TwoWayDisplayBase,
         IWarmingCooling, IOnline, IBasicVideoMuteWithFeedback, ICommunicationMonitor, IHasFeedback, IHasInputs<int>
     {
         private readonly IBasicCommunication _coms;
@@ -62,9 +60,6 @@ namespace EpsonProjectorEpi
 
             SetupInputs();
 
-            PowerIsOnFeedback =
-                new BoolFeedback("PowerIsOn", () => _currentPowerStatus == PowerHandler.PowerStatusEnum.PowerOn);
-
             PowerIsOffFeedback =
                 new BoolFeedback(() => _currentPowerStatus == PowerHandler.PowerStatusEnum.PowerOff);
 
@@ -92,7 +87,7 @@ namespace EpsonProjectorEpi
             var inputHandler = new VideoInputHandler(key);
             inputHandler.VideoInputUpdated += HandleVideoInputUpdated;
 
-            new StringResponseProcessor(gather,
+            _ = new StringResponseProcessor(gather,
                 s =>
                     {
                         powerHandler.ProcessResponse(s);
@@ -114,10 +109,10 @@ namespace EpsonProjectorEpi
                             if (!PowerIsOnFeedback.BoolValue)
                                 return 0;
 
-                            return (int)_currentVideoInput;
+                            return (int) _currentVideoInput;
                         });
 
-            Feedbacks = new FeedbackCollection<Feedback>
+            var feedbacks = new FeedbackCollection<Feedback>
                 {
                     PowerIsOnFeedback,
                     IsWarmingUpFeedback,
@@ -134,6 +129,8 @@ namespace EpsonProjectorEpi
                     new StringFeedback("RequestedInput", () => _requestedVideoInput.ToString()),
                 };
 
+            Feedbacks.AddRange(feedbacks);
+
             CrestronEnvironment.ProgramStatusEventHandler += type =>
                 {
                     if (type != eProgramStatusEventType.Stopping)
@@ -146,8 +143,8 @@ namespace EpsonProjectorEpi
                     _pollTimer.Dispose();
                 };
 
-            WarmupTime = (uint)(config.WarmupTimeMs > 0 ? config.WarmupTimeMs : DefaultWarmUpTimeMs);
-            CooldownTime = (uint)(config.CooldownTimeMs > 0 ? config.CooldownTimeMs : DefaultCooldownTimeMs);
+            WarmupTime = (uint) (config.WarmupTimeMs > 0 ? config.WarmupTimeMs : DefaultWarmUpTimeMs);
+            CooldownTime = (uint) (config.CooldownTimeMs > 0 ? config.CooldownTimeMs : DefaultCooldownTimeMs);
         }
 
         private static CommunicationMonitorConfig GetDefaultMonitorConfig()
@@ -165,15 +162,24 @@ namespace EpsonProjectorEpi
         {
             _currentPowerStatus = eventArgs.Status;
             ProcessRequestedPowerStatus();
-            Feedbacks.FireAllFeedbacks();
+            PowerIsOnFeedback.FireUpdate();
+            PowerIsOffFeedback.FireUpdate();
+            CurrentInputFeedback.FireUpdate();
+            CurrentInputValueFeedback.FireUpdate();
         }
 
         private void HandleMuteStatusUpdated(object sender, Events.VideoMuteEventArgs videoMuteEventArgs)
         {
             _currentVideoMuteStatus = videoMuteEventArgs.Status;
-
             ProcessRequestedMuteStatus();
-            Feedbacks.FireAllFeedbacks();
+            PowerIsOnFeedback.FireUpdate();
+            PowerIsOffFeedback.FireUpdate();
+            CurrentInputFeedback.FireUpdate();
+            CurrentInputValueFeedback.FireUpdate();
+            VideoFreezeIsOn.FireUpdate();
+            VideoFreezeIsOff.FireUpdate();
+            VideoMuteIsOn.FireUpdate();
+            VideoMuteIsOff.FireUpdate();
         }
 
         public override bool CustomActivate()
@@ -216,6 +222,8 @@ namespace EpsonProjectorEpi
 
             PowerIsOnFeedback.OutputChange += (sender, args) =>
                 {
+                    this.LogDebug("PowerIsOn changed to {0}", args.BoolValue);
+
                     if (!args.BoolValue)
                         return;
 
@@ -238,6 +246,11 @@ namespace EpsonProjectorEpi
 
         private void ProcessRequestedPowerStatus()
         {
+            if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.None)
+            {
+                this.LogInformation("ProcessRequestedPowerStatus: Current={0}, Requested={1}", _currentPowerStatus, _requestedPowerStatus);
+            }
+
             switch (_requestedPowerStatus)
             {
                 case PowerHandler.PowerStatusEnum.PowerOn:
@@ -255,6 +268,8 @@ namespace EpsonProjectorEpi
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+
+            Feedbacks.FireAllFeedbacks();
         }
 
         private void ProcessRequestedPowerOn()
@@ -265,17 +280,16 @@ namespace EpsonProjectorEpi
             switch (_currentPowerStatus)
             {
                 case PowerHandler.PowerStatusEnum.PowerOn:
+                    _isWarming = false;
                     _requestedPowerStatus = PowerHandler.PowerStatusEnum.None;
                     break;
                 case PowerHandler.PowerStatusEnum.PowerWarming:
-                    _requestedPowerStatus = PowerHandler.PowerStatusEnum.None;
                     break;
                 case PowerHandler.PowerStatusEnum.PowerCooling:
                     break;
                 case PowerHandler.PowerStatusEnum.PowerOff:
-                    _currentPowerStatus = PowerHandler.PowerStatusEnum.PowerWarming;
                     _isWarming = true;
-                    IsWarmingUpFeedback.FireUpdate();
+                    _currentPowerStatus = PowerHandler.PowerStatusEnum.PowerWarming;
                     break;
 
                 case PowerHandler.PowerStatusEnum.None:
@@ -299,16 +313,17 @@ namespace EpsonProjectorEpi
             switch (_currentPowerStatus)
             {
                 case PowerHandler.PowerStatusEnum.PowerOn:
-                    _currentPowerStatus = PowerHandler.PowerStatusEnum.PowerCooling;
                     _isCooling = true;
                     IsCoolingDownFeedback.FireUpdate();
+                    _currentPowerStatus = PowerHandler.PowerStatusEnum.PowerCooling;
                     break;
                 case PowerHandler.PowerStatusEnum.PowerWarming:
                     break;
                 case PowerHandler.PowerStatusEnum.PowerCooling:
-                    _requestedPowerStatus = PowerHandler.PowerStatusEnum.None;
                     break;
                 case PowerHandler.PowerStatusEnum.PowerOff:
+                    _isCooling = false;
+                    IsCoolingDownFeedback.FireUpdate();
                     _requestedPowerStatus = PowerHandler.PowerStatusEnum.None;
                     break;
                 case PowerHandler.PowerStatusEnum.None:
@@ -585,13 +600,13 @@ namespace EpsonProjectorEpi
         private void HandleVideoInputUpdated(object sender, Events.VideoInputEventArgs videoInputEventArgs)
         {
             _currentVideoInput = videoInputEventArgs.Input;
-            Inputs.CurrentItem = (int)_currentVideoInput;
+            Inputs.CurrentItem = (int) _currentVideoInput;
 
-            if (Inputs.Items.ContainsKey((int)_currentVideoInput))
+            if (Inputs.Items.ContainsKey((int) _currentVideoInput))
             {
                 foreach (var input in Inputs.Items)
                 {
-                    input.Value.IsSelected = input.Key.Equals((int)_currentVideoInput);
+                    input.Value.IsSelected = input.Key.Equals((int) _currentVideoInput);
                 }
             }
 
@@ -687,15 +702,12 @@ namespace EpsonProjectorEpi
         public override void PowerOn()
         {
             _requestedPowerStatus = PowerHandler.PowerStatusEnum.PowerOn;
+
             ProcessRequestedPowerStatus();
             Feedbacks.FireAllFeedbacks();
             _pollTimer.Reset(329, _pollTime);
+
             WarmupTimer?.Dispose();
-            WarmupTimer = new CTimer(o =>
-            {
-                _isWarming = false;
-                IsWarmingUpFeedback.FireUpdate();
-            }, WarmupTime);
         }
 
         public override void PowerOff()
@@ -710,11 +722,6 @@ namespace EpsonProjectorEpi
             _pollTimer.Reset(329, _pollTime);
 
             CooldownTimer?.Dispose();
-            CooldownTimer = new CTimer(o =>
-            {
-                _isCooling = false;
-                IsCoolingDownFeedback.FireUpdate();
-            }, CooldownTime);
         }
 
         public override void PowerToggle()
@@ -830,20 +837,14 @@ namespace EpsonProjectorEpi
             }
         }
 
-
-        public BoolFeedback PowerIsOnFeedback { get; private set; }
         public BoolFeedback PowerIsOffFeedback { get; private set; }
         public BoolFeedback VideoMuteIsOff { get; private set; }
         public BoolFeedback VideoFreezeIsOff { get; private set; }
         public StatusMonitorBase CommunicationMonitor { get; private set; }
-        public FeedbackCollection<Feedback> Feedbacks { get; private set; }
         public IntFeedback LampHoursFeedback { get; private set; }
         public StringFeedback SerialNumberFeedback { get; private set; }
         public IntFeedback CurrentInputValueFeedback { get; private set; }
 
-        public string CurrentSourceInfoKey { get; set; }
-        public SourceListItem CurrentSourceInfo { get; set; }
-        public event SourceInfoChangeHandler CurrentSourceChange;
         public event EventHandler ItemsUpdated;
         public event EventHandler CurrentItemChanged;
 
@@ -869,7 +870,7 @@ namespace EpsonProjectorEpi
             {
                 if (Items.ContainsKey(value))
                 {
-                    _requestedVideoInput = (VideoInputHandler.VideoInputStatusEnum)value;
+                    _requestedVideoInput = (VideoInputHandler.VideoInputStatusEnum) value;
                     Items[value].Select();
                     CurrentItemChanged?.Invoke(this, EventArgs.Empty);
                 }
@@ -888,8 +889,9 @@ namespace EpsonProjectorEpi
 
         protected override Func<string> CurrentInputFeedbackFunc => () => CurrentInputValueFeedback.IntValue.ToString();
 
-        protected override Func<bool> PowerIsOnFeedbackFunc => () => PowerIsOnFeedback.BoolValue;
+        protected override Func<bool> PowerIsOnFeedbackFunc => () => _currentPowerStatus == PowerHandler.PowerStatusEnum.PowerOn;
     }
+
     public enum eLensFunction
     {
         ZoomPlus,
