@@ -21,11 +21,13 @@ namespace EpsonProjectorEpi
         IWarmingCooling, IOnline, IBasicVideoMuteWithFeedback, ICommunicationMonitor, IHasFeedback, IHasInputs<int>
     {
         private readonly IBasicCommunication _coms;
-        private PropsConfig _config;
+        private readonly PropsConfig _config;
         private readonly GenericQueue _commandQueue;
+        private readonly int _pollTime = new Random().Next(5000, 6000);
+
         private CTimer _pollTimer;
-        private CTimer _LensTimer;
-        private const int _pollTime = 6000;
+        private CTimer _lensTimer;
+
         private const long DefaultWarmUpTimeMs = 1000;
         private const long DefaultCooldownTimeMs = 2000;
 
@@ -57,8 +59,6 @@ namespace EpsonProjectorEpi
             var gather = new CommunicationGather(coms, "\x0D:");
 
             _commandQueue = new GenericQueue(key + "-command-queue", 213, Thread.eThreadPriority.MediumPriority, 50);
-
-
 
             SetupInputs();
 
@@ -775,9 +775,9 @@ namespace EpsonProjectorEpi
         /// </summary>
         public void StartLensMoveRepeat(eLensFunction func)
         {
-            if (_LensTimer == null)
+            if (_lensTimer == null)
             {
-                _LensTimer = new CTimer(o => LensFunction(func), null, 0, 250);
+                _lensTimer = new CTimer(o => LensFunction(func), null, 0, 250);
             }
         }
 
@@ -786,10 +786,10 @@ namespace EpsonProjectorEpi
         /// </summary>
         public void StopLensMoveRepeat()
         {
-            if (_LensTimer != null)
+            if (_lensTimer != null)
             {
-                _LensTimer.Stop();
-                _LensTimer = null;
+                _lensTimer.Stop();
+                _lensTimer = null;
             }
         }
 
