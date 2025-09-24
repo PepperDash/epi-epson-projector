@@ -147,6 +147,9 @@ namespace EpsonProjectorEpi
                     _pollTimer.Stop();
                     _pollTimer.Dispose();
                 };
+
+            WarmupTime = (uint)(config.WarmupTimeMs > 0 ? config.WarmupTimeMs : DefaultWarmUpTimeMs);
+            CooldownTime = (uint)(config.CooldownTimeMs > 0 ? config.CooldownTimeMs : DefaultCooldownTimeMs);
         }
 
         private static CommunicationMonitorConfig GetDefaultMonitorConfig()
