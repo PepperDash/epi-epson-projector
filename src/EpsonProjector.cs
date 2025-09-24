@@ -46,8 +46,6 @@ namespace EpsonProjectorEpi
         private bool _isWarming;
         private bool _isCooling;
 
-
-
         public EpsonProjector(string key, string name, PropsConfig config, IBasicCommunication coms) : base(key, name)
         {
             _coms = coms;
@@ -162,11 +160,6 @@ namespace EpsonProjectorEpi
                 TimeToError = 360000,
             };
         }
-
-
-
-
-
 
         private void HandlePowerStatusUpdated(object sender, Events.PowerEventArgs eventArgs)
         {
@@ -697,6 +690,7 @@ namespace EpsonProjectorEpi
             ProcessRequestedPowerStatus();
             Feedbacks.FireAllFeedbacks();
             _pollTimer.Reset(329, _pollTime);
+            WarmupTimer?.Dispose();
             WarmupTimer = new CTimer(o =>
             {
                 _isWarming = false;
@@ -714,6 +708,8 @@ namespace EpsonProjectorEpi
             ProcessRequestedPowerStatus();
             Feedbacks.FireAllFeedbacks();
             _pollTimer.Reset(329, _pollTime);
+
+            CooldownTimer?.Dispose();
             CooldownTimer = new CTimer(o =>
             {
                 _isCooling = false;
@@ -723,7 +719,7 @@ namespace EpsonProjectorEpi
 
         public override void PowerToggle()
         {
-            switch (_requestedPowerStatus)
+            switch (_currentPowerStatus)
             {
                 case PowerHandler.PowerStatusEnum.PowerOn:
                     PowerOff();
