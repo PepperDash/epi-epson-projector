@@ -160,10 +160,19 @@ namespace EpsonProjectorEpi
 
         private void HandlePowerStatusUpdated(object sender, Events.PowerEventArgs eventArgs)
         {
+            if (_currentPowerStatus == eventArgs.Status)
+            {
+                return;
+            }
+
             _currentPowerStatus = eventArgs.Status;
+            _isCooling = _currentPowerStatus == PowerHandler.PowerStatusEnum.PowerCooling;
+            _isWarming = _currentPowerStatus == PowerHandler.PowerStatusEnum.PowerWarming;
             ProcessRequestedPowerStatus();
             PowerIsOnFeedback.FireUpdate();
             PowerIsOffFeedback.FireUpdate();
+            IsWarmingUpFeedback.FireUpdate();
+            IsCoolingDownFeedback.FireUpdate();
             CurrentInputFeedback.FireUpdate();
             CurrentInputValueFeedback.FireUpdate();
         }
@@ -216,9 +225,9 @@ namespace EpsonProjectorEpi
                         Message = Commands.FreezePoll,
                     });
                 },
-    null,
-    5189,
-    _pollTime);
+                null,
+                5189,
+                _pollTime);
 
             PowerIsOnFeedback.OutputChange += (sender, args) =>
                 {
@@ -248,7 +257,7 @@ namespace EpsonProjectorEpi
         {
             if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.None)
             {
-                this.LogInformation("ProcessRequestedPowerStatus: Current={0}, Requested={1}", _currentPowerStatus, _requestedPowerStatus);
+                this.LogDebug("ProcessRequestedPowerStatus: Current={0}, Requested={1}", _currentPowerStatus, _requestedPowerStatus);
             }
 
             switch (_requestedPowerStatus)
