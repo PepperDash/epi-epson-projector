@@ -18,7 +18,7 @@ using Independentsoft.Exchange;
 namespace EpsonProjectorEpi
 {
     public class EpsonProjector : TwoWayDisplayBase, IHasPowerControlWithFeedback,
-        IWarmingCooling, IOnline, IBasicVideoMuteWithFeedback, ICommunicationMonitor, IHasFeedback, IHasInputs<int>
+        IWarmingCooling, IOnline, IBasicVideoMuteWithFeedback, ICommunicationMonitor, IHasFeedback, IHasInputs<int>, IBridgeAdvanced
     {
         private readonly IBasicCommunication _coms;
         private PropsConfig _config;
@@ -831,9 +831,11 @@ namespace EpsonProjectorEpi
             }
         }
 
-
-        public BoolFeedback PowerIsOnFeedback { get; private set; }
-        public BoolFeedback PowerIsOffFeedback { get; private set; }
+    public void LinkToApi(Crestron.SimplSharpPro.DeviceSupport.BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
+    {
+      LinkDisplayToApi(this, trilist, joinStart, joinMapKey, bridge);
+    }    
+        
         public BoolFeedback VideoMuteIsOff { get; private set; }
         public BoolFeedback VideoFreezeIsOff { get; private set; }
         public StatusMonitorBase CommunicationMonitor { get; private set; }
