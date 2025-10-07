@@ -1,5 +1,6 @@
 ﻿using System;
 using PepperDash.Core;
+using PepperDash.Core.Logging;
 
 namespace EpsonProjectorEpi
 {
@@ -46,7 +47,7 @@ namespace EpsonProjectorEpi
                 return;
             }
 
-            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Received an unknown freeze response:{0}", response);
+            this.LogWarning("Received an unknown freeze response: {response}", response);
         }
 
         private void OnFreezeUpdated(Events.VideoFreezeEventArgs args)

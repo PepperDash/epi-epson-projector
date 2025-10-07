@@ -13,6 +13,7 @@ using Crestron.SimplSharpPro.DM;
 using PepperDash.Essentials.Devices.Common.Displays;
 using PepperDash.Essentials.Core.Bridges;
 using Independentsoft.Exchange;
+using PepperDash.Core.Logging;
 
 
 namespace EpsonProjectorEpi
@@ -62,13 +63,10 @@ namespace EpsonProjectorEpi
 
 
 
-            SetupInputs();
+            SetupInputs();            
 
             PowerIsOnFeedback =
                 new BoolFeedback("PowerIsOn", () => _currentPowerStatus == PowerHandler.PowerStatusEnum.PowerOn);
-
-            PowerIsOffFeedback =
-                new BoolFeedback(() => _currentPowerStatus == PowerHandler.PowerStatusEnum.PowerOff);
 
             VideoMuteIsOn =
                 new BoolFeedback("VideoMuteIsOn", () => _currentVideoMuteStatus == VideoMuteHandler.VideoMuteStatusEnum.Muted && PowerIsOnFeedback.BoolValue);
@@ -119,12 +117,11 @@ namespace EpsonProjectorEpi
                             return (int)_currentVideoInput;
                         });
 
-            Feedbacks = new FeedbackCollection<Feedback>
+            var feedbacks = new FeedbackCollection<Feedback>
                 {
                     PowerIsOnFeedback,
                     IsWarmingUpFeedback,
-                    IsCoolingDownFeedback,
-                    PowerIsOffFeedback,
+                    IsCoolingDownFeedback,                    
                     VideoMuteIsOn,
                     VideoMuteIsOff,
                     VideoFreezeIsOn,
@@ -135,6 +132,8 @@ namespace EpsonProjectorEpi
                     new StringFeedback("RequestedFreeze", () => _requestedFreezeStatus.ToString()),
                     new StringFeedback("RequestedInput", () => _requestedVideoInput.ToString()),
                 };
+
+            Feedbacks.AddRange(feedbacks);
 
             CrestronEnvironment.ProgramStatusEventHandler += type =>
                 {
@@ -158,10 +157,7 @@ namespace EpsonProjectorEpi
                 TimeToWarning = 120000,
                 TimeToError = 360000,
             };
-        }
-
-
-
+        }       
 
 
 
@@ -763,7 +759,8 @@ namespace EpsonProjectorEpi
             }
             catch (Exception ex)
             {
-                Debug.Console(1, this, "Error executing switch : {0}{1}", ex.Message, ex.StackTrace);
+                this.LogError("Error executing switch: {message}", ex.Message);
+                this.LogDebug(ex, "Stack Trace: ");
             }
             finally
             {
@@ -774,7 +771,7 @@ namespace EpsonProjectorEpi
         /// <summary>
         /// Does what it says
         /// </summary>
-        public void StartLensMoveRepeat(eLensFunction func)
+        public void StartLensMoveRepeat(ELensFunction func)
         {
             if (_LensTimer == null)
             {
@@ -794,19 +791,19 @@ namespace EpsonProjectorEpi
             }
         }
 
-        public void LensFunction(eLensFunction function)
+        public void LensFunction(ELensFunction function)
         {
             string message;
             switch (function)
             {
-                case eLensFunction.ZoomPlus: message = Commands.ZoomInc; break;
-                case eLensFunction.ZoomMinus: message = Commands.ZoomDec; break;
-                case eLensFunction.FocusPlus: message = Commands.FocusInc; break;
-                case eLensFunction.FocusMinus: message = Commands.FocusDec; break;
-                case eLensFunction.HShiftPlus: message = Commands.HLensInc; break;
-                case eLensFunction.HShiftMinus: message = Commands.HLensDec; break;
-                case eLensFunction.VShiftPlus: message = Commands.VLensInc; break;
-                case eLensFunction.VShiftMinus: message = Commands.VLensDec; break;
+                case ELensFunction.ZoomPlus: message = Commands.ZoomInc; break;
+                case ELensFunction.ZoomMinus: message = Commands.ZoomDec; break;
+                case ELensFunction.FocusPlus: message = Commands.FocusInc; break;
+                case ELensFunction.FocusMinus: message = Commands.FocusDec; break;
+                case ELensFunction.HShiftPlus: message = Commands.HLensInc; break;
+                case ELensFunction.HShiftMinus: message = Commands.HLensDec; break;
+                case ELensFunction.VShiftPlus: message = Commands.VLensInc; break;
+                case ELensFunction.VShiftMinus: message = Commands.VLensDec; break;
                 default: message = null; break;
 
             }
@@ -838,15 +835,10 @@ namespace EpsonProjectorEpi
         
         public BoolFeedback VideoMuteIsOff { get; private set; }
         public BoolFeedback VideoFreezeIsOff { get; private set; }
-        public StatusMonitorBase CommunicationMonitor { get; private set; }
-        public FeedbackCollection<Feedback> Feedbacks { get; private set; }
+        public StatusMonitorBase CommunicationMonitor { get; private set; }        
         public IntFeedback LampHoursFeedback { get; private set; }
         public StringFeedback SerialNumberFeedback { get; private set; }
         public IntFeedback CurrentInputValueFeedback { get; private set; }
-
-        public string CurrentSourceInfoKey { get; set; }
-        public SourceListItem CurrentSourceInfo { get; set; }
-        public event SourceInfoChangeHandler CurrentSourceChange;
         public event EventHandler ItemsUpdated;
         public event EventHandler CurrentItemChanged;
 
@@ -891,32 +883,6 @@ namespace EpsonProjectorEpi
 
         protected override Func<string> CurrentInputFeedbackFunc => () => CurrentInputValueFeedback.IntValue.ToString();
 
-        protected override Func<bool> PowerIsOnFeedbackFunc => () => PowerIsOnFeedback.BoolValue;
-    }
-    public enum eLensFunction
-    {
-        ZoomPlus,
-        ZoomMinus,
-        ZoomStop,
-        FocusPlus,
-        FocusMinus,
-        FocusStop,
-        HShiftPlus,
-        HShiftMinus,
-        HShiftStop,
-        VShiftPlus,
-        VShiftMinus,
-        VShiftStop,
-        Home
-    }
-    public enum eRemoteControls
-    {
-        Menu,
-        Esc,
-        CursorUp,
-        CursorDown,
-        CursorLeft,
-        CursorRight,
-        CursorEnter
+        protected override Func<bool> PowerIsOnFeedbackFunc => () => _currentPowerStatus == PowerHandler.PowerStatusEnum.PowerOn;
     }
 }
