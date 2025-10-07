@@ -11,10 +11,12 @@ namespace EpsonProjectorEpi
         public const string VideoInputDvi = "SOURCE=A0";
         public const string VideoInputComputer = "SOURCE=11";
         public const string VideoInputVideo = "SOURCE=45";
+        
+        public const string VideoInputLan = "SOURCE=50";
 
         public enum VideoInputStatusEnum
         {
-            None = 0, Hdmi = 1, Dvi = 2, Computer = 3, Video = 4 
+            None = 0, Hdmi = 1, Dvi = 2, Computer = 3, Video = 4, Lan = 5
         }
 
         public event EventHandler<Events.VideoInputEventArgs> VideoInputUpdated;
@@ -64,6 +66,16 @@ namespace EpsonProjectorEpi
                 OnMuteUpdated(new Events.VideoInputEventArgs
                     {
                         Input = VideoInputStatusEnum.Video,
+                    });
+
+                return;
+            }
+
+            if (response.Contains(VideoInputLan))
+            {
+                OnMuteUpdated(new Events.VideoInputEventArgs
+                    {
+                        Input = VideoInputStatusEnum.Lan,
                     });
 
                 return;

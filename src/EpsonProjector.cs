@@ -490,6 +490,13 @@ namespace EpsonProjectorEpi
                         Message = Commands.SourceVideo,
                     });
                     break;
+                case VideoInputHandler.VideoInputStatusEnum.Lan:
+                    _commandQueue.Enqueue(new Commands.EpsonCommand
+                    {
+                        Coms = _coms,
+                        Message = Commands.SourceLan,
+                    });
+                    break;
                 case VideoInputHandler.VideoInputStatusEnum.None:
                     break;
                 default:
@@ -523,7 +530,12 @@ namespace EpsonProjectorEpi
                     eRoutingSignalType.Video,
                     eRoutingPortConnectionType.Rgb,
                     VideoInputHandler.VideoInputStatusEnum.Video,
-                    this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Video }
+                    this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Video },
+                new RoutingInputPort("Lan",
+                    eRoutingSignalType.Video,
+                    eRoutingPortConnectionType.HdBaseT,
+                    VideoInputHandler.VideoInputStatusEnum.Lan,
+                    this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Lan }
             });
 
             if (_config.ActiveInputs != null && _config.ActiveInputs.Count > 0)
