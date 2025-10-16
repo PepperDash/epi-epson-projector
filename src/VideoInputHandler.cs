@@ -1,5 +1,6 @@
 ﻿using System;
 using PepperDash.Core;
+using PepperDash.Core.Logging;
 
 namespace EpsonProjectorEpi
 {
@@ -10,10 +11,12 @@ namespace EpsonProjectorEpi
         public const string VideoInputDvi = "SOURCE=A0";
         public const string VideoInputComputer = "SOURCE=11";
         public const string VideoInputVideo = "SOURCE=45";
+        
+        public const string VideoInputLan = "SOURCE=50";
 
         public enum VideoInputStatusEnum
         {
-            None = 0, Hdmi = 1, Dvi = 2, Computer = 3, Video = 4 
+            None = 0, Hdmi = 1, Dvi = 2, Computer = 3, Video = 4, Lan = 5
         }
 
         public event EventHandler<Events.VideoInputEventArgs> VideoInputUpdated;
@@ -68,7 +71,17 @@ namespace EpsonProjectorEpi
                 return;
             }
 
-            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Received an unknown video input response:{0}", response);
+            if (response.Contains(VideoInputLan))
+            {
+                OnMuteUpdated(new Events.VideoInputEventArgs
+                    {
+                        Input = VideoInputStatusEnum.Lan,
+                    });
+
+                return;
+            }
+
+            this.LogWarning("Received an unknown video input response: {response}", response);            
         }
 
         private void OnMuteUpdated(Events.VideoInputEventArgs args)

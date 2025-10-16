@@ -1,5 +1,6 @@
 ﻿using System;
 using PepperDash.Core;
+using PepperDash.Core.Logging;
 
 namespace EpsonProjectorEpi
 {
@@ -67,7 +68,8 @@ namespace EpsonProjectorEpi
                     Status = PowerStatusEnum.PowerOff,
                 });
 
-                Debug.Console(1, this, Debug.ErrorLogLevel.Warning, "Received abnormal power status");
+                this.LogWarning("Received abnormal power status");
+                
                 return;
             }
 
@@ -91,7 +93,7 @@ namespace EpsonProjectorEpi
                 return;
             }
 
-            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Received an unknown power response:{0}", response);
+            this.LogWarning("Received an unknown power response: {response}", response);            
         }
 
         private void OnPowerUpdated(Events.PowerEventArgs args)

@@ -19,6 +19,10 @@ namespace EpsonProjectorEpi
 
         [JsonProperty("activeInputs")]
         public List<ActiveInputs> ActiveInputs { get; set; } 
+
+        public long WarmupTimeMs { get; set; }
+
+        public long CooldownTimeMs { get; set; }
     }
     
     public class ActiveInputs

@@ -1,5 +1,6 @@
 using System.Linq;
 using PepperDash.Core;
+using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 
 namespace EpsonProjectorEpi
@@ -19,30 +20,15 @@ namespace EpsonProjectorEpi
                 var feedback = item;
                 if (feedback is StringFeedback)
                     feedback.OutputChange +=
-                        (sender, args) =>
-                            Debug.Console(1,
-                                keyed,
-                                "Received an update {0}: '{1}'",
-                                feedback.Key,
-                                feedback.StringValue);
+                        (sender, args) => keyed.LogDebug("Received an update {0}: '{1}'", feedback.Key, feedback.StringValue);
 
                 if (feedback is IntFeedback)
                     feedback.OutputChange +=
-                        (sender, args) =>
-                            Debug.Console(1,
-                                keyed,
-                                "Received an update {0}: '{1}'",
-                                feedback.Key,
-                                feedback.IntValue);
+                        (sender, args) => keyed.LogDebug("Received an update {0}: '{1}'", feedback.Key, feedback.IntValue);                                
 
                 if (feedback is BoolFeedback)
                     feedback.OutputChange +=
-                        (sender, args) =>
-                            Debug.Console(1,
-                                keyed,
-                                "Received an update {0}: '{1}'",
-                                feedback.Key,
-                                feedback.BoolValue);
+                        (sender, args) => keyed.LogDebug("Received an update {0}: '{1}'", feedback.Key, feedback.BoolValue);
             }
         }
     }

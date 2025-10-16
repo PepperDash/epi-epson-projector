@@ -29,6 +29,7 @@ namespace EpsonProjectorEpi
         public const string SourceHdmi = "SOURCE 30";
         public const string SourceVideo = "SOURCE 45";
         public const string SourceDvi = "SOURCE A0";
+        public const string SourceLan = "SOURCE 53";
         public const string MuteOn = "MUTE ON";
         public const string MuteOff = "MUTE OFF";
         public const string FreezeOn = "FREEZE ON";
