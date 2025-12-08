@@ -17,7 +17,7 @@ using PepperDash.Core.Logging;
 namespace EpsonProjectorEpi
 {
     public class EpsonProjector : TwoWayDisplayBase, IHasPowerControlWithFeedback,
-        IWarmingCooling, IOnline, IBasicVideoMuteWithFeedback, ICommunicationMonitor, IHasFeedback, IHasInputs<int>, IBridgeAdvanced
+        IWarmingCooling, IOnline, IBasicVideoMuteWithFeedback, ICommunicationMonitor, IHasFeedback, IHasInputs<int>, IBridgeAdvanced, IRoutingSinkWithSwitchingWithInputPort
     {
         private readonly IBasicCommunication _coms;
         private readonly PropsConfig _config;
@@ -512,30 +512,30 @@ namespace EpsonProjectorEpi
                     eRoutingSignalType.Video,
                     eRoutingPortConnectionType.Hdmi,
                     VideoInputHandler.VideoInputStatusEnum.Hdmi,
-                    this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Hdmi },
+                    this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Hdmi, FeedbackMatchObject = VideoInputHandler.VideoInputStatusEnum.Hdmi },
 
                 new RoutingInputPort("DVI",
                     eRoutingSignalType.Video,
                     eRoutingPortConnectionType.Dvi,
                     VideoInputHandler.VideoInputStatusEnum.Dvi,
-                    this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Dvi },
+                    this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Dvi, FeedbackMatchObject = VideoInputHandler.VideoInputStatusEnum.Dvi },
 
                 new RoutingInputPort("Computer",
                     eRoutingSignalType.Video,
                     eRoutingPortConnectionType.Vga,
                     VideoInputHandler.VideoInputStatusEnum.Computer,
-                    this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Computer },
+                    this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Computer, FeedbackMatchObject = VideoInputHandler.VideoInputStatusEnum.Computer },
 
                 new RoutingInputPort("Video",
                     eRoutingSignalType.Video,
                     eRoutingPortConnectionType.Rgb,
                     VideoInputHandler.VideoInputStatusEnum.Video,
-                    this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Video },
+                    this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Video, FeedbackMatchObject = VideoInputHandler.VideoInputStatusEnum.Video },
                 new RoutingInputPort("Lan",
                     eRoutingSignalType.Video,
                     eRoutingPortConnectionType.HdBaseT,
                     VideoInputHandler.VideoInputStatusEnum.Lan,
-                    this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Lan }
+                    this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Lan, FeedbackMatchObject = VideoInputHandler.VideoInputStatusEnum.Lan }
             });
 
             if (_config.ActiveInputs != null && _config.ActiveInputs.Count > 0)
@@ -616,7 +616,13 @@ namespace EpsonProjectorEpi
         private void HandleVideoInputUpdated(object sender, Events.VideoInputEventArgs videoInputEventArgs)
         {
             _currentVideoInput = videoInputEventArgs.Input;
-            Inputs.CurrentItem = (int) _currentVideoInput;
+            Inputs.CurrentItem = (int)_currentVideoInput;
+
+            var currentInputPort = InputPorts.FirstOrDefault(
+                p => p.FeedbackMatchObject is VideoInputHandler.VideoInputStatusEnum @enum &&
+                     @enum == _currentVideoInput);
+                     
+            CurrentInputPort = currentInputPort;
 
             if (Inputs.Items.ContainsKey((int) _currentVideoInput))
             {
