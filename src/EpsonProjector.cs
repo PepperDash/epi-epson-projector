@@ -31,6 +31,7 @@ namespace EpsonProjectorEpi
 
         private const long DefaultWarmUpTimeMs = 1000;
         private const long DefaultCooldownTimeMs = 2000;
+        private const int PowerPollDelayMs = 500;
 
         private PowerHandler.PowerStatusEnum _currentPowerStatus;
         private PowerHandler.PowerStatusEnum _requestedPowerStatus;
@@ -322,17 +323,8 @@ namespace EpsonProjectorEpi
                 Message = Commands.PowerOn,
             });
 
-            // Enqueue power status poll 500ms after power on command
-            _powerOnPollTimer?.Stop();
-            _powerOnPollTimer?.Dispose();
-            _powerOnPollTimer = new CTimer(o =>
-            {
-                _commandQueue.Enqueue(new Commands.EpsonCommand
-                {
-                    Coms = _coms,
-                    Message = Commands.PowerPoll,
-                });
-            }, null, 500);
+            // Enqueue power status poll after power on command
+            SchedulePowerStatusPoll(ref _powerOnPollTimer);
         }
 
         private void ProcessRequestedPowerOff()
@@ -368,17 +360,22 @@ namespace EpsonProjectorEpi
                 Message = Commands.PowerOff,
             });
 
-            // Enqueue power status poll 500ms after power off command
-            _powerOffPollTimer?.Stop();
-            _powerOffPollTimer?.Dispose();
-            _powerOffPollTimer = new CTimer(o =>
+            // Enqueue power status poll after power off command
+            SchedulePowerStatusPoll(ref _powerOffPollTimer);
+        }
+
+        private void SchedulePowerStatusPoll(ref CTimer timer)
+        {
+            timer?.Stop();
+            timer?.Dispose();
+            timer = new CTimer(o =>
             {
                 _commandQueue.Enqueue(new Commands.EpsonCommand
                 {
                     Coms = _coms,
                     Message = Commands.PowerPoll,
                 });
-            }, null, 500);
+            }, null, PowerPollDelayMs);
         }
 
         private void ProcessRequestedMuteStatus()
