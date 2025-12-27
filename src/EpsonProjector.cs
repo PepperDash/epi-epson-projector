@@ -370,6 +370,9 @@ namespace EpsonProjectorEpi
             timer?.Dispose();
             timer = new CTimer(o =>
             {
+                if (_coms == null || _commandQueue == null)
+                    return;
+
                 _commandQueue.Enqueue(new Commands.EpsonCommand
                 {
                     Coms = _coms,
