@@ -26,6 +26,8 @@ namespace EpsonProjectorEpi
 
         private CTimer _pollTimer;
         private CTimer _lensTimer;
+        private CTimer _powerOnPollTimer;
+        private CTimer _powerOffPollTimer;
 
         private const long DefaultWarmUpTimeMs = 1000;
         private const long DefaultCooldownTimeMs = 2000;
@@ -133,11 +135,23 @@ namespace EpsonProjectorEpi
                     if (type != eProgramStatusEventType.Stopping)
                         return;
 
-                    if (_pollTimer == null)
-                        return;
+                    if (_pollTimer != null)
+                    {
+                        _pollTimer.Stop();
+                        _pollTimer.Dispose();
+                    }
 
-                    _pollTimer.Stop();
-                    _pollTimer.Dispose();
+                    if (_powerOnPollTimer != null)
+                    {
+                        _powerOnPollTimer.Stop();
+                        _powerOnPollTimer.Dispose();
+                    }
+
+                    if (_powerOffPollTimer != null)
+                    {
+                        _powerOffPollTimer.Stop();
+                        _powerOffPollTimer.Dispose();
+                    }
                 };
 
             WarmupTime = (uint) (config.WarmupTimeMs > 0 ? config.WarmupTimeMs : DefaultWarmUpTimeMs);
@@ -307,6 +321,18 @@ namespace EpsonProjectorEpi
                 Coms = _coms,
                 Message = Commands.PowerOn,
             });
+
+            // Enqueue power status poll 500ms after power on command
+            _powerOnPollTimer?.Stop();
+            _powerOnPollTimer?.Dispose();
+            _powerOnPollTimer = new CTimer(o =>
+            {
+                _commandQueue.Enqueue(new Commands.EpsonCommand
+                {
+                    Coms = _coms,
+                    Message = Commands.PowerPoll,
+                });
+            }, null, 500);
         }
 
         private void ProcessRequestedPowerOff()
@@ -341,6 +367,18 @@ namespace EpsonProjectorEpi
                 Coms = _coms,
                 Message = Commands.PowerOff,
             });
+
+            // Enqueue power status poll 500ms after power off command
+            _powerOffPollTimer?.Stop();
+            _powerOffPollTimer?.Dispose();
+            _powerOffPollTimer = new CTimer(o =>
+            {
+                _commandQueue.Enqueue(new Commands.EpsonCommand
+                {
+                    Coms = _coms,
+                    Message = Commands.PowerPoll,
+                });
+            }, null, 500);
         }
 
         private void ProcessRequestedMuteStatus()
