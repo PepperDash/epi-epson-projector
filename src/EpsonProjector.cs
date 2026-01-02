@@ -497,6 +497,13 @@ namespace EpsonProjectorEpi
                         Message = Commands.SourceLan,
                     });
                     break;
+                case VideoInputHandler.VideoInputStatusEnum.HdBaseT:
+                    _commandQueue.Enqueue(new Commands.EpsonCommand
+                    {
+                        Coms = _coms,
+                        Message = Commands.SourceHdBaseT,
+                    });
+                    break;
                 case VideoInputHandler.VideoInputStatusEnum.None:
                     break;
                 default:
@@ -531,11 +538,13 @@ namespace EpsonProjectorEpi
                     eRoutingPortConnectionType.Rgb,
                     VideoInputHandler.VideoInputStatusEnum.Video,
                     this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Video, FeedbackMatchObject = VideoInputHandler.VideoInputStatusEnum.Video },
+
                 new RoutingInputPort("Lan",
                     eRoutingSignalType.Video,
                     eRoutingPortConnectionType.HdBaseT,
                     VideoInputHandler.VideoInputStatusEnum.Lan,
                     this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Lan, FeedbackMatchObject = VideoInputHandler.VideoInputStatusEnum.Lan },
+
                 new RoutingInputPort("HDBaseT",
                     eRoutingSignalType.Video,
                     eRoutingPortConnectionType.HdBaseT,
@@ -575,13 +584,6 @@ namespace EpsonProjectorEpi
                         { (int)VideoInputHandler.VideoInputStatusEnum.Hdmi, new EpsonInput("Hdmi", "Hdmi", this, SetHDMI) },
                         { (int)VideoInputHandler.VideoInputStatusEnum.Dvi, new EpsonInput("DVI", "DVI-D", this, SetDVI) },
                         { (int)VideoInputHandler.VideoInputStatusEnum.Computer, new EpsonInput("Computer", "Computer", this, SetComputer) },
-                        { (int)VideoInputHandler.VideoInputStatusEnum.Lan,
-                            new EpsonInput("LAN", "LAN", this, () => _commandQueue.Enqueue(new Commands.EpsonCommand
-                            {
-                                Coms = _coms,
-                                Message = Commands.SourceLan,
-                            }))
-                        },
                         { (int)VideoInputHandler.VideoInputStatusEnum.HdBaseT,
                             new EpsonInput("HDBaseT", "HDBaseT", this, () => _commandQueue.Enqueue(new Commands.EpsonCommand
                             {
