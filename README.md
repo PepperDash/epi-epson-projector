@@ -15,10 +15,10 @@ Crestron Essentials Plugin for Epson Projectors (4-Series)
 
 ### Properties
 
-- **unmuteVideoOnInputSelection** (bool, default: `true`)
-  - Determines whether video is automatically unmuted when selecting an input
-  - Set to `false` to keep mute status unchanged during input selection
-  - JSON property: `"unmuteVideoOnInputSelection"`
+- **dontUnmuteVideoOnRoute** (bool, default: `false`)
+  - When `true`, prevents video from being unmuted during input selection
+  - When `false` (default), video is automatically unmuted when selecting an input (preserves current behavior)
+  - JSON property: `"dontUnmuteVideoOnRoute"`
 
 ### Example Configuration
 
@@ -31,7 +31,7 @@ Crestron Essentials Plugin for Epson Projectors (4-Series)
   "properties": {
     "warmingTimeMs": 14000,
     "coolingTimeMs": 14000,
-    "unmuteVideoOnInputSelection": false,
+    "dontUnmuteVideoOnRoute": true,
     "control": {
       "comParams": {
         "dataBits": 8,

@@ -45,9 +45,9 @@ namespace EpsonProjectorEpi
         public ISelectableItems<int> Inputs { get; private set; }
 
         /// <summary>
-        /// Determines whether video is unmuted when selecting an input
+        /// When true, prevents video from unmuting during input selection
         /// </summary>
-        public bool UnmuteVideoOnInputSelection { get; set; }
+        public bool DontUnmuteVideoOnRoute { get; set; }
 
         private bool _isWarming;
         private bool _isCooling;
@@ -56,7 +56,7 @@ namespace EpsonProjectorEpi
         {
             _coms = coms;
             _config = config;
-            UnmuteVideoOnInputSelection = config.UnmuteVideoOnInputSelection;
+            DontUnmuteVideoOnRoute = config.DontUnmuteVideoOnRoute;
             if (config.Monitor == null)
                 config.Monitor = GetDefaultMonitorConfig();
 
@@ -811,7 +811,7 @@ namespace EpsonProjectorEpi
                 _requestedVideoInput = inputToSwitch;
 
                 PowerOn();
-                if (UnmuteVideoOnInputSelection)
+                if (!DontUnmuteVideoOnRoute)
                     VideoMuteOff();
                 VideoFreezeOff();
                 ProcessRequestedVideoInput();
