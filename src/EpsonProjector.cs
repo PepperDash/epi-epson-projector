@@ -805,7 +805,6 @@ namespace EpsonProjectorEpi
                 _requestedVideoInput = inputToSwitch;
 
                 PowerOn();
-                VideoMuteOff();
                 VideoFreezeOff();
                 ProcessRequestedVideoInput();
                 _pollTimer.Reset(438, _pollTime);
