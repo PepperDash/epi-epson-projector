@@ -102,6 +102,48 @@ namespace EpsonProjectorEpi
                 Description = "Mute Toggle"
             });
 
+        [JoinName("Mute Off Legacy")]
+        public JoinDataComplete MuteOffLegacy = new JoinDataComplete(
+            new JoinData()
+            {
+                JoinNumber = 5,
+                JoinSpan = 1
+            },
+            new JoinMetadata()
+            {
+                JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                JoinType = eJoinType.Digital,
+                Description = "Mute Off Legacy"
+            });
+
+        [JoinName("Mute OnLegacy")]
+        public JoinDataComplete MuteOnLegacy = new JoinDataComplete(
+            new JoinData()
+            {
+                JoinNumber = 6,
+                JoinSpan = 1
+            },
+            new JoinMetadata()
+            {
+                JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                JoinType = eJoinType.Digital,
+                Description = "Mute On Legacy"
+            });
+
+        [JoinName("Mute Toggle Legacy")]
+        public JoinDataComplete MuteToggleLegacy = new JoinDataComplete(
+            new JoinData()
+            {
+                JoinNumber = 7,
+                JoinSpan = 1
+            },
+            new JoinMetadata()
+            {
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Digital,
+                Description = "Mute Toggle Legacy"
+            });
+
         [JoinName("Is Projector")]
         public JoinDataComplete IsProjector = new JoinDataComplete(
             new JoinData()
@@ -277,11 +319,46 @@ namespace EpsonProjectorEpi
 		public JoinDataComplete ZoomMinus = new JoinDataComplete(new JoinData { JoinNumber = 47, JoinSpan = 1 },
 			new JoinMetadata { Description = "ZoomMinus", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
 
+        private void SetIpChangeJoin(uint joinStart)
+        {
+            var ipSetJoinData = new JoinData
+            {
+                JoinNumber = joinStart + 48,
+                JoinSpan = 1
+            };
+
+            var ipSetJoinMetaData = new JoinMetadata
+            {
+                Description = "Set device IP Address",
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Serial
+            };
+
+            var ipSetJoinDataComplete = new JoinDataComplete(ipSetJoinData, ipSetJoinMetaData);
+            Joins.Add("SetIpAddress", ipSetJoinDataComplete);
+
+            var setFbJoinData = new JoinData
+            {
+                JoinNumber = joinStart + 48,
+                JoinSpan = 1
+            };
+
+            var setFbJoinMetaData = new JoinMetadata
+            {
+                Description = "IP Address Change Feedback",
+                JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                JoinType = eJoinType.Digital
+            };
+
+            var setFbJoinDataComplete = new JoinDataComplete(setFbJoinData, setFbJoinMetaData);
+            Joins.Add("IpAddressSetFeedback", setFbJoinDataComplete);
+        }
+
 
         public JoinMap(uint joinStart)
             : base(joinStart, typeof(JoinMap))
         {
-
+            SetIpChangeJoin(joinStart);
         }
     }
 }

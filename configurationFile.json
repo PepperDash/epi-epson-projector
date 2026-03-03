@@ -64,6 +64,44 @@
                 }
             },
             {
+                "key": "Display03",
+                "uid": 222,
+                "name": "Display IP Example",
+                "type": "epsonprojector",
+                "group": "display",
+                "properties": {
+                    "control": {
+                        "method": "tcpIp",
+                        "tcpSshProperties": {
+                            "address": "10.10.10.50",
+                            "port": 3629
+                        }
+                    },
+                    "passKey": "0000",
+                    "useIpSourceCommands": true,
+                    "warmingTimeMs": 1000,
+                    "coolingTimeMs": 2000,
+                    "activeInputs": [
+                        {
+                            "key": "Hdmi",
+                            "name": "HDMI"
+                        },
+                        {
+                            "key": "DVI",
+                            "name": "DVI"
+                        },
+                        {
+                            "key": "Computer",
+                            "name": "Computer"
+                        },
+                        {
+                            "key": "Video",
+                            "name": "Video"
+                        }
+                    ]
+                }
+            },
+            {
                 "key": "eiscBridge-Displays",
                 "uid": 12355,
                 "name": "eiscBridge Displays",

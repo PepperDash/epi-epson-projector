@@ -9,7 +9,9 @@ namespace EpsonProjectorEpi
         public const string VideoInputHdmi = "SOURCE=30";
         public const string VideoInputDvi = "SOURCE=A0";
         public const string VideoInputComputer = "SOURCE=11";
+        public const string VideoInputComputerIp = "SOURCE=53";
         public const string VideoInputVideo = "SOURCE=45";
+        public const string VideoInputVideoIp = "SOURCE=56";
 
         public enum VideoInputStatusEnum
         {
@@ -48,7 +50,7 @@ namespace EpsonProjectorEpi
                 return;
             }
 
-            if (response.Contains(VideoInputComputer))
+            if (response.Contains(VideoInputComputer) || response.Contains(VideoInputComputerIp))
             {
                 OnMuteUpdated(new Events.VideoInputEventArgs
                     {
@@ -58,7 +60,7 @@ namespace EpsonProjectorEpi
                 return;
             }
 
-            if (response.Contains(VideoInputVideo))
+            if (response.Contains(VideoInputVideo) || response.Contains(VideoInputVideoIp))
             {
                 OnMuteUpdated(new Events.VideoInputEventArgs
                     {

@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Linq;
+using System.Text;
 
 using Crestron.SimplSharp;
+using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
+using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.Queues;
 using Feedback = PepperDash.Essentials.Core.Feedback;
 using Thread = Crestron.SimplSharpPro.CrestronThread.Thread;
@@ -23,11 +26,25 @@ namespace EpsonProjectorEpi
         private readonly IBasicCommunication _coms;
         private PropsConfig _config;
         private readonly GenericQueue _commandQueue;
+
+        private static readonly byte[] HeaderPrefix = new byte[]
+        {
+            0x45, 0x53, 0x43, 0x2F, 0x56, 0x50, 0x2E, 0x6E,
+            0x65, 0x74, 0x10, 0x03, 0x00, 0x00, 0x00, 0x01,
+            0x01, 0x01
+        };
+
         private CTimer _pollTimer;
         private CTimer _LensTimer;
         private const int _pollTime = 6000;
         private const long DefaultWarmUpTimeMs = 1000;
         private const long DefaultCooldownTimeMs = 2000;
+
+        private readonly DeviceConfig _dc;
+        private readonly string _passKey;
+        private readonly bool _useIpSourceCommands;
+        private bool _ipChanged;
+        public BoolFeedback IpChangeFeedback;
 
         private PowerHandler.PowerStatusEnum _currentPowerStatus;
         private PowerHandler.PowerStatusEnum _requestedPowerStatus;
@@ -48,15 +65,26 @@ namespace EpsonProjectorEpi
 
 
 
-        public EpsonProjector(string key, string name, PropsConfig config, IBasicCommunication coms) : base(key, name)
+        public EpsonProjector(string key, string name, PropsConfig config, IBasicCommunication coms, DeviceConfig dc) : base(key, name)
         {
             _coms = coms;
+            _dc = dc;
             _config = config;
+            _passKey = config.PassKey;
+            _useIpSourceCommands = config.UseIpSourceCommands;
+
             if (config.Monitor == null)
                 config.Monitor = GetDefaultMonitorConfig();
 
             CommunicationMonitor = new GenericCommunicationMonitor(this, coms, config.Monitor);
+            CommunicationMonitor.Stop();
             var gather = new CommunicationGather(coms, "\x0D:");
+
+            var socket = coms as ISocketStatus;
+            if (socket != null)
+            {
+                socket.ConnectionChange += socket_ConnectionChange;
+            }
 
             _commandQueue = new GenericQueue(key + "-command-queue", 213, Thread.eThreadPriority.MediumPriority, 50);
 
@@ -97,6 +125,8 @@ namespace EpsonProjectorEpi
 
             VideoFreezeIsOff =
                 new BoolFeedback(() => !VideoFreezeIsOn.BoolValue && PowerIsOnFeedback.BoolValue);
+
+            IpChangeFeedback = new BoolFeedback(() => _ipChanged);
 
             var powerHandler = new PowerHandler(key);
             powerHandler.PowerStatusUpdated += HandlePowerStatusUpdated;
@@ -176,6 +206,48 @@ namespace EpsonProjectorEpi
             };
         }
 
+        private void socket_ConnectionChange(object sender, GenericSocketStatusChageEventArgs e)
+        {
+            if (e.Client.IsConnected)
+            {
+                Debug.Console(2, this, "Connected, sending ESCVPnet Command");
+
+                if (_passKey == null)
+                {
+                    Debug.Console(2, this, "Passkey cannot be null");
+                    return;
+                }
+
+                if (_passKey.Length > 16)
+                {
+                    Debug.Console(2, this, "Passkey cannot be longer than 16 characters");
+                    return;
+                }
+
+                byte[] keyBytes = Encoding.ASCII.GetBytes(_passKey);
+                byte[] paddedKey = new byte[16];
+                Array.Copy(keyBytes, paddedKey, keyBytes.Length);
+                byte[] cmd = new byte[HeaderPrefix.Length + paddedKey.Length];
+                Buffer.BlockCopy(HeaderPrefix, 0, cmd, 0, HeaderPrefix.Length);
+                Buffer.BlockCopy(paddedKey, 0, cmd, HeaderPrefix.Length, paddedKey.Length);
+                _coms.SendBytes(cmd);
+
+                if (_pollTimer != null)
+                    _pollTimer.Reset(329, _pollTime);
+
+                CommunicationMonitor.Start();
+            }
+            else
+            {
+                Debug.Console(2, this, "Disconnected");
+
+                if (_pollTimer != null)
+                    _pollTimer.Stop();
+
+                CommunicationMonitor.Stop();
+            }
+        }
+
 
 
 
@@ -198,6 +270,9 @@ namespace EpsonProjectorEpi
 
         public override bool CustomActivate()
         {
+            if (_coms != null)
+                _coms.Connect();
+
             Feedbacks.RegisterForConsoleUpdates(this);
             Feedbacks.FireAllFeedbacks();
 
@@ -234,6 +309,14 @@ namespace EpsonProjectorEpi
     5189,
     _pollTime);
 
+            IsWarmingUpFeedback.OutputChange += (sender, args) =>
+            {
+                if (!args.BoolValue)
+                    return;
+
+                ProcessRequestedMuteStatus();
+            };
+
             PowerIsOnFeedback.OutputChange += (sender, args) =>
                 {
                     if (!args.BoolValue)
@@ -244,8 +327,104 @@ namespace EpsonProjectorEpi
                     ProcessRequestedFreezeStatus();
                 };
 
-            CommunicationMonitor.Start();
+            var socket = _coms as ISocketStatus;
+            if (socket == null)
+            {
+                CommunicationMonitor.Start();
+            }
+
             return base.CustomActivate();
+        }
+
+        public void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
+        {
+            LinkDisplayToApi(this, trilist, joinStart, joinMapKey, bridge);
+
+            var joinMap = new JoinMap(joinStart);
+            if (bridge != null)
+                bridge.AddJoinMap(Key, joinMap);
+
+            JoinDataComplete setIpJoinData;
+            if (joinMap.Joins.TryGetValue("SetIpAddress", out setIpJoinData))
+            {
+                trilist.SetStringSigAction(setIpJoinData.JoinNumber, SetIpAddress);
+                Debug.Console(1, this, "Registered SetIpAddress to join {0}", setIpJoinData.JoinNumber);
+            }
+
+            JoinDataComplete ipSetFbJoinData;
+            if (joinMap.Joins.TryGetValue("IpAddressSetFeedback", out ipSetFbJoinData))
+            {
+                IpChangeFeedback.OutputChange += (o, a) =>
+                {
+                    if (!a.BoolValue)
+                        return;
+
+                    trilist.PulseBool(ipSetFbJoinData.JoinNumber, 1000);
+                    _ipChanged = false;
+                    IpChangeFeedback.FireUpdate();
+                };
+            }
+
+            if (joinMap.Joins.TryGetValue("MuteOnLegacy", out var muteOnLegacyJoin))
+            {
+                trilist.SetSigTrueAction(muteOnLegacyJoin.JoinNumber, VideoMuteOn);
+                VideoMuteIsOn.LinkInputSig(trilist.BooleanInput[muteOnLegacyJoin.JoinNumber]);
+            }
+
+            if (joinMap.Joins.TryGetValue("MuteOffLegacy", out var muteOffLegacyJoin))
+            {
+                trilist.SetSigTrueAction(muteOffLegacyJoin.JoinNumber, VideoMuteOff);
+                VideoMuteIsOff.LinkInputSig(trilist.BooleanInput[muteOffLegacyJoin.JoinNumber]);
+            }
+
+            if (joinMap.Joins.TryGetValue("MuteToggleLegacy", out var muteToggleLegacyJoin))
+            {
+                trilist.SetSigTrueAction(muteToggleLegacyJoin.JoinNumber, VideoMuteToggle);
+            }
+        }
+
+        protected void CustomSetConfig(DeviceConfig config)
+        {
+            ConfigWriter.UpdateDeviceConfig(config);
+
+            Debug.Console(0, this, "IP address changed to {0}. Restart Essentials to take effect.",
+                config.Properties["control"]["tcpSshProperties"]["address"].ToString());
+
+            _ipChanged = true;
+            IpChangeFeedback.FireUpdate();
+        }
+
+        private void SetIpAddress(string hostname)
+        {
+            try
+            {
+                Debug.Console(0, this, "SetIpAddress called with hostname: '{0}'", hostname);
+
+                var currentHostname = _dc.Properties["control"]["tcpSshProperties"]["address"].ToString();
+
+                Debug.Console(0, this, "Current hostname is: '{0}'", currentHostname);
+
+                if (hostname.Length <= 2)
+                {
+                    Debug.Console(0, this, "Hostname is too short; ignoring.");
+                    return;
+                }
+
+                if (currentHostname == hostname)
+                {
+                    Debug.Console(0, this, "Hostname is the same as current; no change needed.");
+                    return;
+                }
+
+                _dc.Properties["control"]["tcpSshProperties"]["address"] = hostname;
+                Debug.Console(0, this, "New hostname set to: '{0}'", hostname);
+
+                CustomSetConfig(_dc);
+            }
+            catch (Exception e)
+            {
+                Debug.Console(2, this, "Error SetIpAddress: '{0}'", e);
+            }
         }
 
         private void HandleFreezeStatusUpdated(object sender, Events.VideoFreezeEventArgs videoFreezeEventArgs)
@@ -346,7 +525,7 @@ namespace EpsonProjectorEpi
 
         private void ProcessRequestedMuteStatus()
         {
-            if (!PowerIsOnFeedback.BoolValue)
+            if (!PowerIsOnFeedback.BoolValue && !IsWarmingUpFeedback.BoolValue)
                 return;
 
             switch (_requestedMuteStatus)
@@ -481,20 +660,37 @@ namespace EpsonProjectorEpi
                     _commandQueue.Enqueue(new Commands.EpsonCommand
                     {
                         Coms = _coms,
-                        Message = Commands.SourceComputer,
+                        Message = GetSourceCommand(VideoInputHandler.VideoInputStatusEnum.Computer),
                     });
                     break;
                 case VideoInputHandler.VideoInputStatusEnum.Video:
                     _commandQueue.Enqueue(new Commands.EpsonCommand
                     {
                         Coms = _coms,
-                        Message = Commands.SourceVideo,
+                        Message = GetSourceCommand(VideoInputHandler.VideoInputStatusEnum.Video),
                     });
                     break;
                 case VideoInputHandler.VideoInputStatusEnum.None:
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private string GetSourceCommand(VideoInputHandler.VideoInputStatusEnum input)
+        {
+            switch (input)
+            {
+                case VideoInputHandler.VideoInputStatusEnum.Hdmi:
+                    return Commands.SourceHdmi;
+                case VideoInputHandler.VideoInputStatusEnum.Dvi:
+                    return Commands.SourceDvi;
+                case VideoInputHandler.VideoInputStatusEnum.Computer:
+                    return _useIpSourceCommands ? Commands.SourceComputerIp : Commands.SourceComputer;
+                case VideoInputHandler.VideoInputStatusEnum.Video:
+                    return _useIpSourceCommands ? Commands.SourceVideoIp : Commands.SourceVideo;
+                default:
+                    throw new ArgumentOutOfRangeException("input", input, null);
             }
         }
 
@@ -589,7 +785,7 @@ namespace EpsonProjectorEpi
             _commandQueue.Enqueue(new Commands.EpsonCommand
             {
                 Coms = _coms,
-                Message = Commands.SourceComputer,
+                Message = GetSourceCommand(VideoInputHandler.VideoInputStatusEnum.Computer),
             });
 
         }
@@ -599,7 +795,7 @@ namespace EpsonProjectorEpi
             _commandQueue.Enqueue(new Commands.EpsonCommand
             {
                 Coms = _coms,
-                Message = Commands.SourceVideo,
+                Message = GetSourceCommand(VideoInputHandler.VideoInputStatusEnum.Video),
             });
         }
         private void HandleVideoInputUpdated(object sender, Events.VideoInputEventArgs videoInputEventArgs)
@@ -640,7 +836,10 @@ namespace EpsonProjectorEpi
 
         public void VideoMuteOn()
         {
-            if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerOn && !PowerIsOnFeedback.BoolValue)
+            if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerOn &&
+                !PowerIsOnFeedback.BoolValue &&
+                _requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerWarming &&
+                !IsWarmingUpFeedback.BoolValue)
                 return;
 
             _requestedMuteStatus = VideoMuteHandler.VideoMuteStatusEnum.Muted;
@@ -651,7 +850,8 @@ namespace EpsonProjectorEpi
 
         public void VideoMuteOff()
         {
-            if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerOn && !PowerIsOnFeedback.BoolValue)
+            if (_requestedPowerStatus != PowerHandler.PowerStatusEnum.PowerOn && !PowerIsOnFeedback.BoolValue ||
+                !VideoMuteIsOn.BoolValue)
                 return;
 
             _requestedMuteStatus = VideoMuteHandler.VideoMuteStatusEnum.Unmuted;
