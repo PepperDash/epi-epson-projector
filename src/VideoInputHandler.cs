@@ -9,14 +9,14 @@ namespace EpsonProjectorEpi
         public const string SearchString = "SOURCE=";
         public const string VideoInputHdmi = "SOURCE=30";
         public const string VideoInputDvi = "SOURCE=A0";
-        public const string VideoInputComputer = "SOURCE=11";
+        public const string VideoInputComputer = "SOURCE=10";
         public const string VideoInputVideo = "SOURCE=45";
-        
-        public const string VideoInputLan = "SOURCE=50";
+        public const string VideoInputLan = "SOURCE=63";
+        public const string VideoInputHdBaseT = "SOURCE=80";
 
         public enum VideoInputStatusEnum
         {
-            None = 0, Hdmi = 1, Dvi = 2, Computer = 3, Video = 4, Lan = 5
+            None = 0, Hdmi = 1, Dvi = 2, Computer = 3, Video = 4, Lan = 5, HdBaseT = 6
         }
 
         public event EventHandler<Events.VideoInputEventArgs> VideoInputUpdated;
@@ -33,7 +33,7 @@ namespace EpsonProjectorEpi
 
             if (response.Contains(VideoInputHdmi))
             {
-                OnMuteUpdated(new Events.VideoInputEventArgs
+                OnInputUpdated(new Events.VideoInputEventArgs
                     {
                         Input = VideoInputStatusEnum.Hdmi,
                     });
@@ -43,7 +43,7 @@ namespace EpsonProjectorEpi
 
             if (response.Contains(VideoInputDvi))
             {
-                OnMuteUpdated(new Events.VideoInputEventArgs
+                OnInputUpdated(new Events.VideoInputEventArgs
                     {
                         Input = VideoInputStatusEnum.Dvi,
                     });
@@ -53,7 +53,7 @@ namespace EpsonProjectorEpi
 
             if (response.Contains(VideoInputComputer))
             {
-                OnMuteUpdated(new Events.VideoInputEventArgs
+                OnInputUpdated(new Events.VideoInputEventArgs
                     {
                         Input = VideoInputStatusEnum.Computer,
                     });
@@ -63,7 +63,7 @@ namespace EpsonProjectorEpi
 
             if (response.Contains(VideoInputVideo))
             {
-                OnMuteUpdated(new Events.VideoInputEventArgs
+                OnInputUpdated(new Events.VideoInputEventArgs
                     {
                         Input = VideoInputStatusEnum.Video,
                     });
@@ -73,7 +73,7 @@ namespace EpsonProjectorEpi
 
             if (response.Contains(VideoInputLan))
             {
-                OnMuteUpdated(new Events.VideoInputEventArgs
+                OnInputUpdated(new Events.VideoInputEventArgs
                     {
                         Input = VideoInputStatusEnum.Lan,
                     });
@@ -81,10 +81,20 @@ namespace EpsonProjectorEpi
                 return;
             }
 
-            this.LogWarning("Received an unknown video input response: {response}", response);            
+            if (response.Contains(VideoInputHdBaseT))
+            {
+                OnInputUpdated(new Events.VideoInputEventArgs
+                {
+                    Input = VideoInputStatusEnum.HdBaseT,
+                });
+
+                return;
+            }
+
+            this.LogWarning("Received an unknown video input response: {response}", response);
         }
 
-        private void OnMuteUpdated(Events.VideoInputEventArgs args)
+        private void OnInputUpdated(Events.VideoInputEventArgs args)
         {
             var handler = VideoInputUpdated;
             if (handler == null)

@@ -17,12 +17,12 @@ using PepperDash.Core.Logging;
 namespace EpsonProjectorEpi
 {
     public class EpsonProjector : TwoWayDisplayBase, IHasPowerControlWithFeedback,
-        IWarmingCooling, IOnline, IBasicVideoMuteWithFeedback, ICommunicationMonitor, IHasFeedback, IHasInputs<int>, IBridgeAdvanced, IRoutingSinkWithSwitchingWithInputPort
+        IWarmingCooling, IOnline, IBasicVideoMuteWithFeedback, ICommunicationMonitor, IHasInputs<int>, IBridgeAdvanced, IRoutingSinkWithSwitchingWithInputPort
     {
         private readonly IBasicCommunication _coms;
         private readonly PropsConfig _config;
         private readonly GenericQueue _commandQueue;
-        private readonly int _pollTime = new Random().Next(5000, 6000);
+        private readonly int _pollTime = new Random().Next(3000, 4000);
 
         private CTimer _pollTimer;
         private CTimer _lensTimer;
@@ -44,6 +44,11 @@ namespace EpsonProjectorEpi
 
         public ISelectableItems<int> Inputs { get; private set; }
 
+        /// <summary>
+        /// When true, prevents video from unmuting during input selection
+        /// </summary>
+        public bool DontUnmuteVideoOnRoute { get; set; }
+
         private bool _isWarming;
         private bool _isCooling;
 
@@ -51,6 +56,7 @@ namespace EpsonProjectorEpi
         {
             _coms = coms;
             _config = config;
+            DontUnmuteVideoOnRoute = config.DontUnmuteVideoOnRoute;
             if (config.Monitor == null)
                 config.Monitor = GetDefaultMonitorConfig();
 
@@ -114,7 +120,7 @@ namespace EpsonProjectorEpi
                 {
                     PowerIsOnFeedback,
                     IsWarmingUpFeedback,
-                    IsCoolingDownFeedback,                    
+                    IsCoolingDownFeedback,
                     VideoMuteIsOn,
                     VideoMuteIsOff,
                     VideoFreezeIsOn,
@@ -497,6 +503,13 @@ namespace EpsonProjectorEpi
                         Message = Commands.SourceLan,
                     });
                     break;
+                case VideoInputHandler.VideoInputStatusEnum.HdBaseT:
+                    _commandQueue.Enqueue(new Commands.EpsonCommand
+                    {
+                        Coms = _coms,
+                        Message = Commands.SourceHdBaseT,
+                    });
+                    break;
                 case VideoInputHandler.VideoInputStatusEnum.None:
                     break;
                 default:
@@ -531,10 +544,17 @@ namespace EpsonProjectorEpi
                     eRoutingPortConnectionType.Rgb,
                     VideoInputHandler.VideoInputStatusEnum.Video,
                     this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Video, FeedbackMatchObject = VideoInputHandler.VideoInputStatusEnum.Video },
+
                 new RoutingInputPort("Lan",
                     eRoutingSignalType.Video,
                     eRoutingPortConnectionType.HdBaseT,
                     VideoInputHandler.VideoInputStatusEnum.Lan,
+                    this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Lan, FeedbackMatchObject = VideoInputHandler.VideoInputStatusEnum.Lan },
+
+                new RoutingInputPort("HDBaseT",
+                    eRoutingSignalType.Video,
+                    eRoutingPortConnectionType.HdBaseT,
+                    VideoInputHandler.VideoInputStatusEnum.HdBaseT,
                     this) { Port = (int)VideoInputHandler.VideoInputStatusEnum.Lan, FeedbackMatchObject = VideoInputHandler.VideoInputStatusEnum.Lan }
             });
 
@@ -567,10 +587,16 @@ namespace EpsonProjectorEpi
                 {
                     Items = new Dictionary<int, ISelectableItem>
                     {
-                        {1, new EpsonInput("Hdmi", "Hdmi", this, SetHDMI) },
-                        {2, new EpsonInput("DVI", "DVI", this, SetDVI) },
-                        { 3, new EpsonInput("Computer", "Computer", this, SetComputer) },
-                        { 4, new EpsonInput("Video", "Video", this, SetVideo) }
+                        { (int)VideoInputHandler.VideoInputStatusEnum.Hdmi, new EpsonInput("Hdmi", "Hdmi", this, SetHDMI) },
+                        { (int)VideoInputHandler.VideoInputStatusEnum.Dvi, new EpsonInput("DVI", "DVI-D", this, SetDVI) },
+                        { (int)VideoInputHandler.VideoInputStatusEnum.Computer, new EpsonInput("Computer", "Computer", this, SetComputer) },
+                        { (int)VideoInputHandler.VideoInputStatusEnum.HdBaseT,
+                            new EpsonInput("HDBaseT", "HDBaseT", this, () => _commandQueue.Enqueue(new Commands.EpsonCommand
+                            {
+                                Coms = _coms,
+                                Message = Commands.SourceHdBaseT,
+                            }))
+                        },
                     }
                 };
             }
@@ -613,6 +639,7 @@ namespace EpsonProjectorEpi
                 Message = Commands.SourceVideo,
             });
         }
+
         private void HandleVideoInputUpdated(object sender, Events.VideoInputEventArgs videoInputEventArgs)
         {
             _currentVideoInput = videoInputEventArgs.Input;
@@ -621,7 +648,7 @@ namespace EpsonProjectorEpi
             var currentInputPort = InputPorts.FirstOrDefault(
                 p => p.FeedbackMatchObject is VideoInputHandler.VideoInputStatusEnum @enum &&
                      @enum == _currentVideoInput);
-                     
+
             CurrentInputPort = currentInputPort;
 
             if (Inputs.Items.ContainsKey((int) _currentVideoInput))
@@ -784,7 +811,8 @@ namespace EpsonProjectorEpi
                 _requestedVideoInput = inputToSwitch;
 
                 PowerOn();
-                VideoMuteOff();
+                if (!DontUnmuteVideoOnRoute)
+                    VideoMuteOff();
                 VideoFreezeOff();
                 ProcessRequestedVideoInput();
                 _pollTimer.Reset(438, _pollTime);
@@ -863,11 +891,11 @@ namespace EpsonProjectorEpi
     public void LinkToApi(Crestron.SimplSharpPro.DeviceSupport.BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
     {
       LinkDisplayToApi(this, trilist, joinStart, joinMapKey, bridge);
-    }    
-        
+    }
+
         public BoolFeedback VideoMuteIsOff { get; private set; }
         public BoolFeedback VideoFreezeIsOff { get; private set; }
-        public StatusMonitorBase CommunicationMonitor { get; private set; }        
+        public StatusMonitorBase CommunicationMonitor { get; private set; }
         public IntFeedback LampHoursFeedback { get; private set; }
         public StringFeedback SerialNumberFeedback { get; private set; }
         public IntFeedback CurrentInputValueFeedback { get; private set; }

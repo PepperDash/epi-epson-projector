@@ -23,6 +23,9 @@ namespace EpsonProjectorEpi
         public long WarmupTimeMs { get; set; }
 
         public long CooldownTimeMs { get; set; }
+
+        [JsonProperty("dontUnmuteVideoOnRoute")]
+        public bool DontUnmuteVideoOnRoute { get; set; } = false;
     }
     
     public class ActiveInputs

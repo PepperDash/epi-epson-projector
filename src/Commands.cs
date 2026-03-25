@@ -13,10 +13,13 @@ namespace EpsonProjectorEpi
 
             public void Dispatch()
             {
-                if (Coms == null || String.IsNullOrEmpty(Message))
+                if (Coms == null || string
+
+
+                        .IsNullOrEmpty(Message))
                     return;
 
-                Coms.SendText(Message + "\x0D");
+                Coms.SendText(Message + "\r");
             }
 
             public override string ToString()
@@ -25,11 +28,12 @@ namespace EpsonProjectorEpi
             }
         }
 
-        public const string SourceComputer = "SOURCE 11";
+        public const string SourceComputer = "SOURCE 10";
         public const string SourceHdmi = "SOURCE 30";
         public const string SourceVideo = "SOURCE 45";
+        public const string SourceHdBaseT = "SOURCE 80";
+        public const string SourceLan = "SOURCE 63";
         public const string SourceDvi = "SOURCE A0";
-        public const string SourceLan = "SOURCE 53";
         public const string MuteOn = "MUTE ON";
         public const string MuteOff = "MUTE OFF";
         public const string FreezeOn = "FREEZE ON";
