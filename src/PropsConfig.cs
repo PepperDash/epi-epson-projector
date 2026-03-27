@@ -17,6 +17,9 @@ namespace EpsonProjectorEpi
         public CommunicationMonitorConfig Monitor { get; set; }
         public bool EnableBridgeComms { get; set; }
 
+        [JsonProperty("passKey")]
+        public string PassKey { get; set; }
+
         [JsonProperty("activeInputs")]
         public List<ActiveInputs> ActiveInputs { get; set; } 
 

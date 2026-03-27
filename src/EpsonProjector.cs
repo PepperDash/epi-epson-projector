@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Text;
 
 using Crestron.SimplSharp;
 using PepperDash.Core;
@@ -23,6 +24,16 @@ namespace EpsonProjectorEpi
         private readonly PropsConfig _config;
         private readonly GenericQueue _commandQueue;
         private readonly int _pollTime = new Random().Next(3000, 4000);
+        private readonly string _passKey;
+        private readonly bool _isTcpConnection;
+
+        // ESC/VP.net TCP handshake header
+        private static readonly byte[] TcpHandshakeHeader = new byte[]
+        {
+            0x45, 0x53, 0x43, 0x2F, 0x56, 0x50, 0x2E, 0x6E,
+            0x65, 0x74, 0x10, 0x03, 0x00, 0x00, 0x00, 0x01,
+            0x01, 0x01
+        };
 
         private CTimer _pollTimer;
         private CTimer _lensTimer;
@@ -56,12 +67,20 @@ namespace EpsonProjectorEpi
         {
             _coms = coms;
             _config = config;
+            _passKey = config.PassKey ?? string.Empty;
             DontUnmuteVideoOnRoute = config.DontUnmuteVideoOnRoute;
             if (config.Monitor == null)
                 config.Monitor = GetDefaultMonitorConfig();
 
             CommunicationMonitor = new GenericCommunicationMonitor(this, coms, config.Monitor);
             var gather = new CommunicationGather(coms, "\x0D:");
+
+            var socket = coms as ISocketStatus;
+            _isTcpConnection = socket != null;
+            if (socket != null)
+            {
+                socket.ConnectionChange += HandleSocketConnectionChange;
+            }
 
             _commandQueue = new GenericQueue(key + "-command-queue", 213, Thread.eThreadPriority.MediumPriority, 50);
 
@@ -161,6 +180,48 @@ namespace EpsonProjectorEpi
             };
         }
 
+        private void HandleSocketConnectionChange(object sender, GenericSocketStatusChageEventArgs e)
+        {
+            if (e.Client.IsConnected)
+            {
+                this.LogDebug("TCP connected, sending ESC/VP.net handshake");
+                SendTcpHandshake();
+
+                if (_pollTimer != null)
+                    _pollTimer.Reset(329, _pollTime);
+
+                CommunicationMonitor.Start();
+            }
+            else
+            {
+                this.LogDebug("TCP disconnected");
+
+                if (_pollTimer != null)
+                    _pollTimer.Stop();
+
+                CommunicationMonitor.Stop();
+            }
+        }
+
+        private void SendTcpHandshake()
+        {
+            if (_passKey.Length > 16)
+            {
+                this.LogError("passKey cannot be longer than 16 characters; TCP handshake not sent");
+                return;
+            }
+
+            byte[] keyBytes = Encoding.ASCII.GetBytes(_passKey);
+            byte[] paddedKey = new byte[16];
+            Array.Copy(keyBytes, paddedKey, keyBytes.Length);
+
+            byte[] cmd = new byte[TcpHandshakeHeader.Length + paddedKey.Length];
+            Buffer.BlockCopy(TcpHandshakeHeader, 0, cmd, 0, TcpHandshakeHeader.Length);
+            Buffer.BlockCopy(paddedKey, 0, cmd, TcpHandshakeHeader.Length, paddedKey.Length);
+
+            _coms.SendBytes(cmd);
+        }
+
         private void HandlePowerStatusUpdated(object sender, Events.PowerEventArgs eventArgs)
         {
             if (_currentPowerStatus == eventArgs.Status)
@@ -242,7 +303,17 @@ namespace EpsonProjectorEpi
                     ProcessRequestedFreezeStatus();
                 };
 
-            CommunicationMonitor.Start();
+            if (_isTcpConnection)
+            {
+                // For TCP: the connection change handler starts the monitor and poll timer
+                // after the ESC/VP.net handshake is sent. Kick off the connection here.
+                _coms.Connect();
+            }
+            else
+            {
+                CommunicationMonitor.Start();
+            }
+
             return base.CustomActivate();
         }
 
