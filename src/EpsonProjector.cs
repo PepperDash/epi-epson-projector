@@ -967,7 +967,18 @@ namespace EpsonProjectorEpi
 
             if (!string.IsNullOrEmpty(joinMapSerialized))
             {
-                joinMap = JsonConvert.DeserializeObject<EpsonDisplayControllerJoinMap>(joinMapSerialized);
+                try
+                {
+                    var deserializedJoinMap = JsonConvert.DeserializeObject<EpsonDisplayControllerJoinMap>(joinMapSerialized);
+                    if (deserializedJoinMap != null)
+                    {
+                        joinMap = deserializedJoinMap;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    this.LogError("Failed to deserialize join map '{0}' for device '{1}'. Using default join map starting at join {2}. Error: {3}", joinMapKey, Key, joinStart, ex.Message);
+                }
             }
 
             if (bridge != null)
