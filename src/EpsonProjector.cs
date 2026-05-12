@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using PepperDash.Essentials.Devices.Common.Displays;
 using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Core.Logging;
+using Newtonsoft.Json;
 
 
 namespace EpsonProjectorEpi
@@ -959,10 +960,53 @@ namespace EpsonProjectorEpi
             }
         }
 
-    public void LinkToApi(Crestron.SimplSharpPro.DeviceSupport.BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
-    {
-      LinkDisplayToApi(this, trilist, joinStart, joinMapKey, bridge);
-    }
+        public void LinkToApi(Crestron.SimplSharpPro.DeviceSupport.BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
+        {
+            var joinMap = new EpsonDisplayControllerJoinMap(joinStart);
+            var joinMapSerialized = JoinMapHelper.GetSerializedJoinMapForDevice(joinMapKey);
+
+            if (!string.IsNullOrEmpty(joinMapSerialized))
+            {
+                joinMap = JsonConvert.DeserializeObject<EpsonDisplayControllerJoinMap>(joinMapSerialized);
+            }
+
+            if (bridge != null)
+            {
+                bridge.AddJoinMap(Key, joinMap);
+            }
+            else
+            {
+                this.LogInformation("Please update config to use 'eiscapiadvanced' to get all join map features for this device.");
+            }
+
+            LinkDisplayToApi(this, trilist, joinMap);
+
+            trilist.SetSigTrueAction(joinMap.MuteOn.JoinNumber, VideoMuteOn);
+            VideoMuteIsOn.LinkInputSig(trilist.BooleanInput[joinMap.MuteOn.JoinNumber]);
+
+            trilist.SetSigTrueAction(joinMap.MuteOff.JoinNumber, VideoMuteOff);
+            VideoMuteIsOff.LinkInputSig(trilist.BooleanInput[joinMap.MuteOff.JoinNumber]);
+
+            trilist.SetSigTrueAction(joinMap.MuteToggle.JoinNumber, VideoMuteToggle);
+
+            trilist.SetSigTrueAction(joinMap.MuteOnLegacy.JoinNumber, VideoMuteOn);
+            VideoMuteIsOn.LinkInputSig(trilist.BooleanInput[joinMap.MuteOnLegacy.JoinNumber]);
+
+            trilist.SetSigTrueAction(joinMap.MuteOffLegacy.JoinNumber, VideoMuteOff);
+            VideoMuteIsOff.LinkInputSig(trilist.BooleanInput[joinMap.MuteOffLegacy.JoinNumber]);
+
+            trilist.SetSigTrueAction(joinMap.MuteToggleLegacy.JoinNumber, VideoMuteToggle);
+
+            trilist.SetSigTrueAction(joinMap.FreezeOn.JoinNumber, VideoFreezeOn);
+            VideoFreezeIsOn.LinkInputSig(trilist.BooleanInput[joinMap.FreezeOn.JoinNumber]);
+
+            trilist.SetSigTrueAction(joinMap.FreezeOff.JoinNumber, VideoFreezeOff);
+            VideoFreezeIsOff.LinkInputSig(trilist.BooleanInput[joinMap.FreezeOff.JoinNumber]);
+
+            trilist.SetSigTrueAction(joinMap.FreezeToggle.JoinNumber, VideoFreezeToggle);
+
+            LampHoursFeedback.LinkInputSig(trilist.UShortInput[joinMap.LampHours.JoinNumber]);
+        }
 
         public BoolFeedback VideoMuteIsOff { get; private set; }
         public BoolFeedback VideoFreezeIsOff { get; private set; }
