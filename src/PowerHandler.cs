@@ -93,7 +93,7 @@ namespace EpsonProjectorEpi
                 return;
             }
 
-            this.LogWarning("Received an unknown power response: {response}", response);            
+            this.LogVerbose("Received an unknown power response: {response}", response);
         }
 
         private void OnPowerUpdated(Events.PowerEventArgs args)
