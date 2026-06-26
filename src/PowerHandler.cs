@@ -13,6 +13,7 @@ namespace EpsonProjectorEpi
         public const string CoolingResponse = "PWR=03";
         public const string StandbyResponse = "PWR=04";
         public const string AbnormalStandbyResponse = "PWR=05";
+        public const string NetworkStandbyResponse = "PWR=09";
 
         public enum PowerStatusEnum
         {
@@ -70,6 +71,16 @@ namespace EpsonProjectorEpi
 
                 this.LogWarning("Received abnormal power status");
                 
+                return;
+            }
+
+            if (response.Contains(NetworkStandbyResponse))
+            {
+                OnPowerUpdated(new Events.PowerEventArgs
+                {
+                    Status = PowerStatusEnum.PowerOff,
+                });
+
                 return;
             }
 
