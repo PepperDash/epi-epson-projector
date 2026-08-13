@@ -6,7 +6,7 @@ using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Queues;
 using Feedback = PepperDash.Essentials.Core.Feedback;
-using Thread = Crestron.SimplSharpPro.CrestronThread.Thread;
+using System.Threading;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using System.Collections.Generic;
 using PepperDash.Essentials.Devices.Common.Displays;
@@ -14,10 +14,10 @@ using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Core.Logging;
 
 
-namespace EpsonProjectorEpi
+namespace PepperDash.Essentials.Plugins
 {
     public class EpsonProjector : TwoWayDisplayBase, IHasPowerControlWithFeedback,
-        IWarmingCooling, IOnline, IBasicVideoMuteWithFeedback, ICommunicationMonitor, IHasInputs<int>, IBridgeAdvanced, IRoutingSinkWithSwitchingWithInputPort
+        IWarmingCooling, IOnline, IBasicVideoMuteWithFeedback, ICommunicationMonitor, IHasInputs<int>, IBridgeAdvanced
     {
         private readonly IBasicCommunication _coms;
         private readonly PropsConfig _config;
@@ -63,7 +63,7 @@ namespace EpsonProjectorEpi
             CommunicationMonitor = new GenericCommunicationMonitor(this, coms, config.Monitor);
             var gather = new CommunicationGather(coms, "\x0D:");
 
-            _commandQueue = new GenericQueue(key + "-command-queue", 213, Thread.eThreadPriority.MediumPriority, 50);
+            _commandQueue = new GenericQueue(key + "-command-queue", 213, ThreadPriority.Normal, 50);
 
             SetupInputs();
 
@@ -192,7 +192,7 @@ namespace EpsonProjectorEpi
             VideoMuteIsOff.FireUpdate();
         }
 
-        public override bool CustomActivate()
+        protected override bool CustomActivate()
         {
             Feedbacks.RegisterForConsoleUpdates(this);
             Feedbacks.FireAllFeedbacks();

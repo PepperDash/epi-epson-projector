@@ -2,13 +2,13 @@
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
 
-namespace EpsonProjectorEpi
+namespace PepperDash.Essentials.Plugins
 {
     public class DeviceFactory : EssentialsPluginDeviceFactory<EpsonProjector>
     {
         public DeviceFactory()
         {
-            MinimumEssentialsFrameworkVersion = "2.4.7";
+            MinimumEssentialsFrameworkVersion = "3.0.0-dev-v3-routing.62";
             TypeNames = new List<string>() { "epsonProjector" };
         }
 
