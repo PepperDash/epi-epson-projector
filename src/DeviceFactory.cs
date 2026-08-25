@@ -8,7 +8,7 @@ namespace PepperDash.Essentials.Plugins
     {
         public DeviceFactory()
         {
-            MinimumEssentialsFrameworkVersion = "3.0.0-dev-v3-routing.62";
+            MinimumEssentialsFrameworkVersion = "3.0.0";
             TypeNames = new List<string>() { "epsonProjector" };
         }
 
