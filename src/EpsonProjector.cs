@@ -107,7 +107,7 @@ namespace PepperDash.Essentials.Plugins
                 new SerialNumberHandler(key, _commandQueue, gather, PowerIsOnFeedback).SerialNumberFeedback;
 
             CurrentInputValueFeedback =
-                new IntFeedback("CurrentInput",
+                new IntFeedback("CurrentInputValue",
                     () =>
                         {
                             if (!PowerIsOnFeedback.BoolValue)
@@ -116,11 +116,10 @@ namespace PepperDash.Essentials.Plugins
                             return (int) _currentVideoInput;
                         });
 
+            // PowerIsOnFeedback/IsWarmingUpFeedback/IsCoolingDownFeedback are already registered by
+            // DisplayBase/TwoWayDisplayBase; re-adding them throws on the key-unique FeedbackCollection.
             var feedbacks = new FeedbackCollection<Feedback>
                 {
-                    PowerIsOnFeedback,
-                    IsWarmingUpFeedback,
-                    IsCoolingDownFeedback,
                     VideoMuteIsOn,
                     VideoMuteIsOff,
                     VideoFreezeIsOn,
