@@ -40,7 +40,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="PepperDashEssentials" Version="3.0.0-feat-update-ihaswebview.1" >
+    <PackageReference Include="PepperDashEssentials" Version="3.0.0-feature-mockRoutingMidpoint-add-IHasNamedRoutingSlots.1" >
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
   </ItemGroup>
