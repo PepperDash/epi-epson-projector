@@ -2,7 +2,7 @@
 using PepperDash.Core;
 using PepperDash.Core.Logging;
 
-namespace EpsonProjectorEpi
+namespace PepperDash.Essentials.Plugins
 {
     public class VideoInputHandler : IKeyed
     {
