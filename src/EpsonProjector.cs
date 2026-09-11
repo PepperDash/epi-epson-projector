@@ -30,8 +30,11 @@ namespace PepperDash.Essentials.Plugins
         private const long DefaultWarmUpTimeMs = 1000;
         private const long DefaultCooldownTimeMs = 2000;
 
+        private const int MaxPowerOnAttempts = 3;
+
         private PowerHandler.PowerStatusEnum _currentPowerStatus;
         private PowerHandler.PowerStatusEnum _requestedPowerStatus;
+        private int _powerOnAttempts;
 
         private VideoMuteHandler.VideoMuteStatusEnum _currentVideoMuteStatus;
         private VideoMuteHandler.VideoMuteStatusEnum _requestedMuteStatus;
@@ -291,12 +294,21 @@ namespace PepperDash.Essentials.Plugins
                 case PowerHandler.PowerStatusEnum.PowerOn:
                     _isWarming = false;
                     _requestedPowerStatus = PowerHandler.PowerStatusEnum.None;
+                    _powerOnAttempts = 0;
                     break;
                 case PowerHandler.PowerStatusEnum.PowerWarming:
                     break;
                 case PowerHandler.PowerStatusEnum.PowerCooling:
                     break;
                 case PowerHandler.PowerStatusEnum.PowerOff:
+                    if (_powerOnAttempts >= MaxPowerOnAttempts)
+                    {
+                        this.LogError("Projector failed to reach PowerOn after {0} attempts; giving up until the next PowerOn request", _powerOnAttempts);
+                        _requestedPowerStatus = PowerHandler.PowerStatusEnum.None;
+                        return;
+                    }
+
+                    _powerOnAttempts++;
                     _isWarming = true;
                     _currentPowerStatus = PowerHandler.PowerStatusEnum.PowerWarming;
                     break;
@@ -750,6 +762,7 @@ namespace PepperDash.Essentials.Plugins
         public override void PowerOn()
         {
             _requestedPowerStatus = PowerHandler.PowerStatusEnum.PowerOn;
+            _powerOnAttempts = 0;
 
             ProcessRequestedPowerStatus();
             Feedbacks.FireAllFeedbacks();
