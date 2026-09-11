@@ -4,7 +4,7 @@ using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Queues;
 
-namespace EpsonProjectorEpi
+namespace PepperDash.Essentials.Plugins
 {
     public class LampHoursHandler : IKeyed
     {

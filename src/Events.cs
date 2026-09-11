@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace EpsonProjectorEpi
+namespace PepperDash.Essentials.Plugins
 {
     public static class Events
     {

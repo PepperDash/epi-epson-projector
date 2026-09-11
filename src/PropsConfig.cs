@@ -4,7 +4,7 @@ using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
 using PepperDash.Core;
 
-namespace EpsonProjectorEpi
+namespace PepperDash.Essentials.Plugins
 {
     public class PropsConfig
     {

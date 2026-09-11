@@ -1,4 +1,4 @@
-namespace EpsonProjectorEpi
+namespace PepperDash.Essentials.Plugins
 {
   public enum ELensFunction
     {

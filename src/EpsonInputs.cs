@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace EpsonProjectorEpi
+namespace PepperDash.Essentials.Plugins
 {
     public class EpsonInputs : ISelectableItems<int>
     {

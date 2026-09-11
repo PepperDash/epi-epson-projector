@@ -6,7 +6,7 @@ using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Queues;
 using Feedback = PepperDash.Essentials.Core.Feedback;
-using Thread = Crestron.SimplSharpPro.CrestronThread.Thread;
+using System.Threading;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using System.Collections.Generic;
 using PepperDash.Essentials.Devices.Common.Displays;
@@ -14,10 +14,10 @@ using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Core.Logging;
 
 
-namespace EpsonProjectorEpi
+namespace PepperDash.Essentials.Plugins
 {
     public class EpsonProjector : TwoWayDisplayBase, IHasPowerControlWithFeedback,
-        IWarmingCooling, IOnline, IBasicVideoMuteWithFeedback, ICommunicationMonitor, IHasInputs<int>, IBridgeAdvanced, IRoutingSinkWithSwitchingWithInputPort
+        IWarmingCooling, IOnline, IBasicVideoMuteWithFeedback, ICommunicationMonitor, IHasInputs<int>, IBridgeAdvanced
     {
         private readonly IBasicCommunication _coms;
         private readonly PropsConfig _config;
@@ -30,8 +30,11 @@ namespace EpsonProjectorEpi
         private const long DefaultWarmUpTimeMs = 1000;
         private const long DefaultCooldownTimeMs = 2000;
 
+        private const int MaxPowerOnAttempts = 3;
+
         private PowerHandler.PowerStatusEnum _currentPowerStatus;
         private PowerHandler.PowerStatusEnum _requestedPowerStatus;
+        private int _powerOnAttempts;
 
         private VideoMuteHandler.VideoMuteStatusEnum _currentVideoMuteStatus;
         private VideoMuteHandler.VideoMuteStatusEnum _requestedMuteStatus;
@@ -63,7 +66,7 @@ namespace EpsonProjectorEpi
             CommunicationMonitor = new GenericCommunicationMonitor(this, coms, config.Monitor);
             var gather = new CommunicationGather(coms, "\x0D:");
 
-            _commandQueue = new GenericQueue(key + "-command-queue", 213, Thread.eThreadPriority.MediumPriority, 50);
+            _commandQueue = new GenericQueue(key + "-command-queue", 213, ThreadPriority.Normal, 50);
 
             SetupInputs();
 
@@ -107,7 +110,7 @@ namespace EpsonProjectorEpi
                 new SerialNumberHandler(key, _commandQueue, gather, PowerIsOnFeedback).SerialNumberFeedback;
 
             CurrentInputValueFeedback =
-                new IntFeedback("CurrentInput",
+                new IntFeedback("CurrentInputValue",
                     () =>
                         {
                             if (!PowerIsOnFeedback.BoolValue)
@@ -116,11 +119,10 @@ namespace EpsonProjectorEpi
                             return (int) _currentVideoInput;
                         });
 
+            // PowerIsOnFeedback/IsWarmingUpFeedback/IsCoolingDownFeedback are already registered by
+            // DisplayBase/TwoWayDisplayBase; re-adding them throws on the key-unique FeedbackCollection.
             var feedbacks = new FeedbackCollection<Feedback>
                 {
-                    PowerIsOnFeedback,
-                    IsWarmingUpFeedback,
-                    IsCoolingDownFeedback,
                     VideoMuteIsOn,
                     VideoMuteIsOff,
                     VideoFreezeIsOn,
@@ -192,7 +194,7 @@ namespace EpsonProjectorEpi
             VideoMuteIsOff.FireUpdate();
         }
 
-        public override bool CustomActivate()
+        protected override bool CustomActivate()
         {
             Feedbacks.RegisterForConsoleUpdates(this);
             Feedbacks.FireAllFeedbacks();
@@ -292,12 +294,21 @@ namespace EpsonProjectorEpi
                 case PowerHandler.PowerStatusEnum.PowerOn:
                     _isWarming = false;
                     _requestedPowerStatus = PowerHandler.PowerStatusEnum.None;
+                    _powerOnAttempts = 0;
                     break;
                 case PowerHandler.PowerStatusEnum.PowerWarming:
                     break;
                 case PowerHandler.PowerStatusEnum.PowerCooling:
                     break;
                 case PowerHandler.PowerStatusEnum.PowerOff:
+                    if (_powerOnAttempts >= MaxPowerOnAttempts)
+                    {
+                        this.LogError("Projector failed to reach PowerOn after {0} attempts; giving up until the next PowerOn request", _powerOnAttempts);
+                        _requestedPowerStatus = PowerHandler.PowerStatusEnum.None;
+                        return;
+                    }
+
+                    _powerOnAttempts++;
                     _isWarming = true;
                     _currentPowerStatus = PowerHandler.PowerStatusEnum.PowerWarming;
                     break;
@@ -751,6 +762,7 @@ namespace EpsonProjectorEpi
         public override void PowerOn()
         {
             _requestedPowerStatus = PowerHandler.PowerStatusEnum.PowerOn;
+            _powerOnAttempts = 0;
 
             ProcessRequestedPowerStatus();
             Feedbacks.FireAllFeedbacks();
