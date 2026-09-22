@@ -6,7 +6,7 @@ using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Queues;
 using Feedback = PepperDash.Essentials.Core.Feedback;
-using Thread = Crestron.SimplSharpPro.CrestronThread.Thread;
+using System.Threading;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using System.Collections.Generic;
 using PepperDash.Essentials.Devices.Common.Displays;
@@ -14,10 +14,10 @@ using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Core.Logging;
 
 
-namespace EpsonProjectorEpi
+namespace PepperDash.Essentials.Plugins
 {
     public class EpsonProjector : TwoWayDisplayBase, IHasPowerControlWithFeedback,
-        IWarmingCooling, IOnline, IBasicVideoMuteWithFeedback, ICommunicationMonitor, IHasInputs<int>, IBridgeAdvanced, IRoutingSinkWithSwitchingWithInputPort
+        IWarmingCooling, IOnline, IBasicVideoMuteWithFeedback, ICommunicationMonitor, IHasInputs<int>, IBridgeAdvanced
     {
         private readonly IBasicCommunication _coms;
         private readonly PropsConfig _config;
@@ -30,8 +30,11 @@ namespace EpsonProjectorEpi
         private const long DefaultWarmUpTimeMs = 1000;
         private const long DefaultCooldownTimeMs = 2000;
 
+        private const int MaxPowerOnAttempts = 3;
+
         private PowerHandler.PowerStatusEnum _currentPowerStatus;
         private PowerHandler.PowerStatusEnum _requestedPowerStatus;
+        private int _powerOnAttempts;
 
         private VideoMuteHandler.VideoMuteStatusEnum _currentVideoMuteStatus;
         private VideoMuteHandler.VideoMuteStatusEnum _requestedMuteStatus;
@@ -63,7 +66,7 @@ namespace EpsonProjectorEpi
             CommunicationMonitor = new GenericCommunicationMonitor(this, coms, config.Monitor);
             var gather = new CommunicationGather(coms, "\x0D:");
 
-            _commandQueue = new GenericQueue(key + "-command-queue", 213, Thread.eThreadPriority.MediumPriority, 50);
+            _commandQueue = new GenericQueue(key + "-command-queue", 213, ThreadPriority.Normal, 50);
 
             SetupInputs();
 
@@ -107,7 +110,7 @@ namespace EpsonProjectorEpi
                 new SerialNumberHandler(key, _commandQueue, gather, PowerIsOnFeedback).SerialNumberFeedback;
 
             CurrentInputValueFeedback =
-                new IntFeedback("CurrentInput",
+                new IntFeedback("CurrentInputValue",
                     () =>
                         {
                             if (!PowerIsOnFeedback.BoolValue)
@@ -116,11 +119,10 @@ namespace EpsonProjectorEpi
                             return (int) _currentVideoInput;
                         });
 
+            // PowerIsOnFeedback/IsWarmingUpFeedback/IsCoolingDownFeedback are already registered by
+            // DisplayBase/TwoWayDisplayBase; re-adding them throws on the key-unique FeedbackCollection.
             var feedbacks = new FeedbackCollection<Feedback>
                 {
-                    PowerIsOnFeedback,
-                    IsWarmingUpFeedback,
-                    IsCoolingDownFeedback,
                     VideoMuteIsOn,
                     VideoMuteIsOff,
                     VideoFreezeIsOn,
@@ -161,6 +163,58 @@ namespace EpsonProjectorEpi
             };
         }
 
+        /// <summary>
+        /// Whether a warm-up window is currently running.
+        /// </summary>
+        private bool WarmupWindowIsOpen => WarmupTimer != null && WarmupTimer.Enabled;
+
+        /// <summary>
+        /// Hold <see cref="IsWarmingUpFeedback"/> true for <see cref="DisplayBase.WarmupTime"/>,
+        /// whatever the projector says in the meantime.
+        ///
+        /// <para>These projectors do not reliably report the moment an image is actually usable -
+        /// several models report <c>PowerOn</c> while the lamp is still coming up. Deriving
+        /// warm-up from the reported status alone therefore ends it early, and anything gating on
+        /// it (a room holding its source buttons until the displays can take a route) is released
+        /// into a projector that cannot yet show anything.</para>
+        ///
+        /// <para>So the window is authoritative: a status report can <em>start</em> it but never
+        /// shorten it. It is a floor, not a replacement - <see cref="PowerIsOnFeedback"/> still
+        /// comes from the projector, so a projector that never reports on never claims to be on.
+        /// And because the window always expires, a projector that reports nothing at all still
+        /// leaves the warming state rather than latching there forever.</para>
+        ///
+        /// <para><c>WarmupTimeMs</c> in config sets the duration. The default is deliberately short
+        /// so that existing installations behave as they did before this window existed; a room
+        /// that needs the guarantee sets the projector's real warm-up time.</para>
+        /// </summary>
+        private void StartWarmupWindow()
+        {
+            _isWarming = true;
+
+            if (WarmupTimer != null)
+            {
+                WarmupTimer.Stop();
+                WarmupTimer.Dispose();
+            }
+
+            WarmupTimer = new System.Timers.Timer(WarmupTime) { AutoReset = false };
+            WarmupTimer.Elapsed += (o, a) => EndWarmupWindow();
+            WarmupTimer.Start();
+        }
+
+        /// <summary>
+        /// Close the warm-up window and republish, so whatever was waiting on it is released.
+        /// </summary>
+        private void EndWarmupWindow()
+        {
+            WarmupTimer?.Stop();
+            _isWarming = false;
+
+            IsWarmingUpFeedback.FireUpdate();
+            PowerIsOnFeedback.FireUpdate();
+        }
+
         private void HandlePowerStatusUpdated(object sender, Events.PowerEventArgs eventArgs)
         {
             if (_currentPowerStatus == eventArgs.Status)
@@ -170,7 +224,21 @@ namespace EpsonProjectorEpi
 
             _currentPowerStatus = eventArgs.Status;
             _isCooling = _currentPowerStatus == PowerHandler.PowerStatusEnum.PowerCooling;
-            _isWarming = _currentPowerStatus == PowerHandler.PowerStatusEnum.PowerWarming;
+
+            if (_currentPowerStatus == PowerHandler.PowerStatusEnum.PowerWarming)
+            {
+                // The projector started warming on its own - from the remote, or a power cycle we
+                // did not initiate. Open a window for it too, so the guarantee below holds however
+                // the lamp was lit.
+                if (!WarmupWindowIsOpen)
+                    StartWarmupWindow();
+            }
+            else if (!WarmupWindowIsOpen)
+            {
+                _isWarming = false;
+            }
+            // else: the window is open and the projector says it is done. It is not believed - see
+            // StartWarmupWindow.
             ProcessRequestedPowerStatus();
             PowerIsOnFeedback.FireUpdate();
             IsWarmingUpFeedback.FireUpdate();
@@ -192,7 +260,7 @@ namespace EpsonProjectorEpi
             VideoMuteIsOff.FireUpdate();
         }
 
-        public override bool CustomActivate()
+        protected override bool CustomActivate()
         {
             Feedbacks.RegisterForConsoleUpdates(this);
             Feedbacks.FireAllFeedbacks();
@@ -290,15 +358,25 @@ namespace EpsonProjectorEpi
             switch (_currentPowerStatus)
             {
                 case PowerHandler.PowerStatusEnum.PowerOn:
-                    _isWarming = false;
+                    if (!WarmupWindowIsOpen)
+                        _isWarming = false;
                     _requestedPowerStatus = PowerHandler.PowerStatusEnum.None;
+                    _powerOnAttempts = 0;
                     break;
                 case PowerHandler.PowerStatusEnum.PowerWarming:
                     break;
                 case PowerHandler.PowerStatusEnum.PowerCooling:
                     break;
                 case PowerHandler.PowerStatusEnum.PowerOff:
-                    _isWarming = true;
+                    if (_powerOnAttempts >= MaxPowerOnAttempts)
+                    {
+                        this.LogError("Projector failed to reach PowerOn after {0} attempts; giving up until the next PowerOn request", _powerOnAttempts);
+                        _requestedPowerStatus = PowerHandler.PowerStatusEnum.None;
+                        return;
+                    }
+
+                    _powerOnAttempts++;
+                    StartWarmupWindow();
                     _currentPowerStatus = PowerHandler.PowerStatusEnum.PowerWarming;
                     break;
 
@@ -751,12 +829,11 @@ namespace EpsonProjectorEpi
         public override void PowerOn()
         {
             _requestedPowerStatus = PowerHandler.PowerStatusEnum.PowerOn;
+            _powerOnAttempts = 0;
 
             ProcessRequestedPowerStatus();
             Feedbacks.FireAllFeedbacks();
             _pollTimer.Reset(329, _pollTime);
-
-            WarmupTimer?.Dispose();
         }
 
         public override void PowerOff()
