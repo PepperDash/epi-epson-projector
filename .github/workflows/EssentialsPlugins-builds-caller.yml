@@ -22,3 +22,13 @@ jobs:
       tag: ${{ needs.getVersion.outputs.tag }}
       channel: ${{ needs.getVersion.outputs.channel }}
       bypassPackageCheck: true
+
+  metadata:
+    needs: [getVersion, build-4Series]
+    if: needs.getVersion.outputs.newVersion == 'true'
+    uses: PepperDash/workflow-templates/.github/workflows/pepperdash-metadata.yml@main
+    permissions:
+      contents: write   # attach pepperdash-metadata.json to the release
+      id-token: write   # GitHub OIDC token for UDM
+    with:
+      tag: ${{ needs.getVersion.outputs.tag }}
