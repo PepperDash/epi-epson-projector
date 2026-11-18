@@ -26,9 +26,9 @@ jobs:
   metadata:
     needs: [getVersion, build-4Series]
     if: needs.getVersion.outputs.newVersion == 'true'
-    uses: PepperDash/workflow-templates/.github/workflows/pepperdash-metadata.yml@main
+    uses: PepperDash/workflow-templates/.github/workflows/pepperdash-metadata.yml@feat/metadata-agent
     permissions:
       contents: write   # attach pepperdash-metadata.json to the release
-      id-token: write   # GitHub OIDC token for UDM
+      id-token: write   # GitHub OIDC tokens for UDM and the AI agent
     with:
       tag: ${{ needs.getVersion.outputs.tag }}
