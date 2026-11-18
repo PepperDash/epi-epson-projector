@@ -17,7 +17,7 @@ on:
 jobs:
   metadata:
     if: github.event_name == 'workflow_dispatch'
-    uses: PepperDash/workflow-templates/.github/workflows/pepperdash-metadata.yml@feat/metadata-agent
+    uses: PepperDash/workflow-templates/.github/workflows/pepperdash-metadata.yml@main
     permissions:
       contents: write   # attach pepperdash-metadata.json to the release
       id-token: write   # GitHub OIDC token for UDM
@@ -26,7 +26,7 @@ jobs:
 
   withdraw:
     if: github.event_name == 'release'
-    uses: PepperDash/workflow-templates/.github/workflows/pepperdash-metadata.yml@feat/metadata-agent
+    uses: PepperDash/workflow-templates/.github/workflows/pepperdash-metadata.yml@main
     permissions:
       contents: read
       id-token: write
