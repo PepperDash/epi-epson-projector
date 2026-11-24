@@ -1,0 +1,35 @@
+name: PepperDash Release Metadata
+
+# Regenerates the metadata for an existing release, and withdraws a release from Portal when its
+# GitHub release is deleted. New releases get theirs from the build workflow.
+# Both triggers only run from the default branch.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'The release tag, e.g. v4.0.0-feature-v3-migration.5'
+        required: true
+        type: string
+  release:
+    types: [deleted]
+
+jobs:
+  metadata:
+    if: github.event_name == 'workflow_dispatch'
+    uses: PepperDash/workflow-templates/.github/workflows/pepperdash-metadata.yml@main
+    permissions:
+      contents: write   # attach pepperdash-metadata.json to the release
+      id-token: write   # GitHub OIDC token for UDM
+    with:
+      tag: ${{ inputs.tag }}
+
+  withdraw:
+    if: github.event_name == 'release'
+    uses: PepperDash/workflow-templates/.github/workflows/pepperdash-metadata.yml@main
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      tag: ${{ github.event.release.tag_name }}
+      mode: withdraw
